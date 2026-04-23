@@ -15,4 +15,4 @@ COPY . /app/backend/
 EXPOSE 8080
 
 # Command to run the FastApi application using the correct module path
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
