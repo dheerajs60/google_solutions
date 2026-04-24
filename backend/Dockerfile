@@ -12,12 +12,22 @@ RUN if [ -f backend/requirements.txt ]; then \
         pip install --no-cache-dir -r backend/requirements.txt; \
     elif [ -f requirements.txt ]; then \
         pip install --no-cache-dir -r requirements.txt; \
-    else \
-        ls -R && echo "requirements.txt not found" && exit 1; \
     fi
 
-# Expose port (Cloud Run sets the PORT env variable automatically)
+# Hyper-resilience: If we are in the 'backend' context, we need a 'backend' directory
+# so that imports like 'from backend.routers' work.
+RUN if [ ! -d backend ]; then \
+        echo "Reconstructing 'backend' package structure..." && \
+        mkdir /tmp/app_content && \
+        cp -r . /tmp/app_content && \
+        rm -rf * && \
+        mkdir backend && \
+        mv /tmp/app_content/* backend/ && \
+        touch backend/__init__.py; \
+    fi
+
+# Expose port
 EXPOSE 8080
 
-# Robustly start the application
-CMD ["sh", "-c", "if [ -d backend ]; then uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8080}; else uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}; fi"]
+# Start uvicorn - always using backend.main:app now that we've ensured the structure
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
