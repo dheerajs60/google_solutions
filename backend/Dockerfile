@@ -1,4 +1,12 @@
-# Use the official Python image
+# Stage 1: Build Frontend
+FROM node:20-slim as frontend-build
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2: Build Backend
 FROM python:3.11-slim
 
 # Set working directory to /app
@@ -6,6 +14,9 @@ WORKDIR /app
 
 # Copy the entire context
 COPY . .
+
+# Copy frontend build from stage 1
+COPY --from=frontend-build /app/frontend/dist /app/dist
 
 # Robustly find and install requirements
 RUN if [ -f backend/requirements.txt ]; then \
