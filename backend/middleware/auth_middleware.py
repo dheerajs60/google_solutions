@@ -5,8 +5,12 @@ from firebase_admin import auth
 
 class FirebaseAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        # Exclude specific paths like healthcheck and CORS preflight
-        if request.url.path in ["/health", "/healthcheck", "/docs", "/openapi.json"] or request.method == "OPTIONS":
+        # Exclude frontend, assets, healthcheck and CORS preflight
+        path = request.url.path
+        if path in ["/", "/health", "/healthcheck", "/docs", "/openapi.json"] or \
+           path.startswith("/assets/") or \
+           not path.startswith("/audit") or \
+           request.method == "OPTIONS":
             return await call_next(request)
 
         auth_header = request.headers.get("Authorization")
