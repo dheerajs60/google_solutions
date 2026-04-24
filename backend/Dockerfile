@@ -1,5 +1,5 @@
 # Use the official Python image
-FROM python:3.13-slim
+FROM python:3.11-slim
 
 # Create a staging directory to accept the build context, whichever it is
 # It could be the repository root (.) or the backend directory (backend/)
