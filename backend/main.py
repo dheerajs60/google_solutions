@@ -53,10 +53,16 @@ if os.path.exists(frontend_path):
 
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
-        # Avoid intercepting API calls if they happen to reach here (though they shouldn't)
+        # Avoid intercepting API calls
         if full_path.startswith("audit") or full_path == "health":
             return {"detail": "Not Found"}
         
+        # Check if the requested path is an actual file (e.g., sample.csv)
+        file_path = os.path.join(frontend_path, full_path)
+        if full_path and os.path.isfile(file_path):
+            return FileResponse(file_path)
+            
+        # Fallback to index.html for SPA routing
         index_file = os.path.join(frontend_path, "index.html")
         if os.path.exists(index_file):
             return FileResponse(index_file)
