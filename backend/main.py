@@ -1,15 +1,26 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import audit, mitigation
+try:
+    from fastapi import FastAPI
+    from fastapi.middleware.cors import CORSMiddleware
+    from backend.routers import audit, mitigation
+    
+    # Initialize firebase admin
+    import backend.config.firebase_admin
+    
+    from backend.middleware.auth_middleware import FirebaseAuthMiddleware
+    
+    app = FastAPI(title="FairLens API", version="1.0.0")
+except Exception as e:
+    print(f"!!! CRITICAL STARTUP ERROR: {e}")
+    import traceback
+    print(traceback.format_exc())
+    raise e
 
-# Initialize firebase admin
-import backend.config.firebase_admin
+try:
+    app.add_middleware(FirebaseAuthMiddleware)
+except Exception as e:
+    print(f"!!! CRITICAL MIDDLEWARE ERROR: {e}")
+    raise e
 
-from backend.middleware.auth_middleware import FirebaseAuthMiddleware
-
-app = FastAPI(title="FairLens API", version="1.0.0")
-
-app.add_middleware(FirebaseAuthMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], # For hackathon
