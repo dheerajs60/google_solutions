@@ -74,7 +74,7 @@ export const AuditHistory = () => {
                                         </div>
                                         <div>
                                             <p className="text-xs font-black text-on-surface tracking-tight">{row.dataset}</p>
-                                            <p className="text-[10px] text-on-surface-variant uppercase font-medium">Record ID: {Math.random().toString(36).substr(2, 6).toUpperCase()}</p>
+                                            <p className="text-[10px] text-on-surface-variant uppercase font-medium">Record ID: {row.id?.substring(0, 8).toUpperCase()}</p>
                                         </div>
                                     </div>
                                 </td>

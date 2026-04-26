@@ -39,10 +39,18 @@ export const Sidebar = () => {
             </nav>
             
             <div className="pt-4 border-t border-outline-variant/20 space-y-1">
-                <button className="flex items-center w-full px-3 py-2 space-x-3 text-sm font-medium text-on-surface-variant hover:bg-slate-200/50 transition-all duration-200 ease-in-out rounded-lg">
+                <NavLink
+                    to="/settings"
+                    className={({ isActive }) => clsx(
+                        "flex items-center px-3 py-2 space-x-3 text-sm font-medium transition-all duration-200 ease-in-out rounded-lg",
+                        isActive 
+                            ? "bg-white text-primary shadow-sm" 
+                            : "text-on-surface-variant hover:bg-slate-200/50"
+                    )}
+                >
                     <span className="material-symbols-outlined text-[22px]">settings</span>
                     <span>Settings</span>
-                </button>
+                </NavLink>
             </div>
         </aside>
     );

@@ -37,10 +37,15 @@ def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = N
     else:
         print("Warning: Firestore client not configured, skipping metadata save.")
 
-    # Store full details in BigQuery
+    # Store full details in BigQuery - only serializable metadata
     if bq_client:
         try:
-            full_details = {**data, "results": results}
+            # Filter out non-serializable objects like model, dataframes
+            serializable_data = {
+                k: v for k, v in data.items() 
+                if k in ["dataset", "date", "model_type", "sensitive_attrs", "target_column", "positive_label"]
+            }
+            full_details = {**serializable_data, "results": results}
             table_ref = f"{project_id}.fair_audit.audits"
             
             # Convert nested dict into json string
@@ -84,6 +89,8 @@ def update_mitigation_results(audit_id: str, mitigation_res: Dict[str, Any]):
 
 def get_history() -> List[Dict[str, Any]]:
     history = []
+    
+    # 1. Try Firestore first
     if db:
         try:
             docs = db.collection("audit_history").stream()
@@ -91,8 +98,31 @@ def get_history() -> List[Dict[str, Any]]:
                 history.append(doc.to_dict())
         except Exception as e:
             print(f"Firestore read error: {e}")
-    else:
-        # Fallback local data matching the previous schema
+
+    # 2. If nothing in Firestore, fallback to BigQuery
+    if not history and bq_client:
+        try:
+            query = f"SELECT audit_id, full_details FROM `{project_id}.fair_audit.audits` ORDER BY audit_id DESC LIMIT 50"
+            results = bq_client.query(query).result()
+            for row in results:
+                details = json.loads(row.full_details)
+                res = details.get("results", {})
+                overall_score = res.get("overall_score", 0.0)
+                status = "PASS" if overall_score > 0.9 else "WARNING" if overall_score > 0.8 else "FAIL"
+                
+                history.append({
+                    "id": row.audit_id,
+                    "dataset": details.get("dataset", "Unknown"),
+                    "date": details.get("date", datetime.datetime.now().strftime("%Y-%m-%d")),
+                    "model_type": details.get("model_type", "Classification"),
+                    "overall_score": overall_score,
+                    "status": status
+                })
+        except Exception as e:
+            print(f"BigQuery history read error: {e}")
+
+    # 3. Final fallback: local in-memory audits
+    if not history:
         for key, value in ACTIVE_AUDITS.items():
             overall_score = value.get("results", {}).get("overall_score", 0.0)
             status = "PASS" if overall_score > 0.9 else "WARNING" if overall_score > 0.8 else "FAIL"
@@ -104,6 +134,7 @@ def get_history() -> List[Dict[str, Any]]:
                 "overall_score": overall_score,
                 "status": status
             })
+            
     return history
 
 def get_audit(audit_id: str) -> Dict[str, Any]:

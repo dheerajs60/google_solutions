@@ -11,13 +11,14 @@ import { ComplianceReport } from './pages/ComplianceReport';
 import { AuditHistory } from './pages/AuditHistory';
 import { Heatmap } from './pages/Heatmap';
 import { Methodology } from './pages/Methodology';
+import { Settings } from './pages/Settings';
 
 import { onAuthStateChanged } from './services/authService';
 import useAuthStore from './store/useAuthStore';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 function App() {
-  const { setUser, clearUser, isLoading } = useAuthStore();
+  const { setUser, clearUser, isLoading, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged((user) => {
@@ -34,8 +35,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Landing page is standalone */}
-        <Route index element={<Landing />} />
+        {/* Landing page is standalone, redirect if already logged in */}
+        <Route index element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Landing />} />
         
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
@@ -50,6 +51,7 @@ function App() {
                 <Route path="mitigation" element={<MitigationLab />} />
                 <Route path="report" element={<ComplianceReport />} />
                 <Route path="history" element={<AuditHistory />} />
+                <Route path="settings" element={<Settings />} />
             </Route>
         </Route>
 

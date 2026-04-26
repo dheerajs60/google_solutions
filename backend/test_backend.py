@@ -18,7 +18,7 @@ def main():
         "marital-status", "occupation", "relationship", "race", "sex", 
         "capital-gain", "capital-loss", "hours-per-week", "native-country", "income"
     ]
-    df = pd.read_csv(r"C:\Users\bharg\Downloads\Projects\Fair Lens Google\adult dataset\adult.data", names=columns, index_col=False)
+    df = pd.read_csv(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "UCI_Adult_Income_Dataset.csv")), index_col=False)
     
     # Strip whitespace from string columns
     for col in df.select_dtypes(['object']).columns:
