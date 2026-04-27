@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from typing import List
+from fastapi.responses import StreamingResponse
+from typing import List, Dict, Any
 import pandas as pd
 import io
 import uuid
@@ -8,8 +9,12 @@ from backend.models.schemas import AuditResponse
 from backend.services.preprocessor import preprocess_data
 from backend.services.bias_engine import run_bias_analysis
 
-from backend.services.store import get_audit_results, get_audit, update_audit_results, get_history as store_get_history, store_audit
-from backend.services.gemini_service import generate_bias_explanation
+from backend.services.store import (
+    get_audit_results, get_audit, update_audit_results, 
+    get_history as store_get_history, store_audit,
+    save_user_settings, get_user_settings
+)
+from backend.services.gemini_service import generate_bias_explanation, generate_bias_explanation_stream
 
 router = APIRouter()
 
@@ -22,14 +27,35 @@ async def get_audit_analysis(audit_id: str):
     results = audit_data.get("results")
     sensitive_attrs = audit_data.get("sensitive_attrs")
     
-    # Generate expensive AI explanation on demand
     explanation = generate_bias_explanation(results["metrics"], sensitive_attrs)
     
-    # Persist the explanation
     results["gemini_explanation"] = explanation
     update_audit_results(audit_id, results)
     
     return {"explanation": explanation}
+
+@router.get("/{audit_id}/analysis/stream")
+async def stream_audit_analysis(audit_id: str):
+    audit_data = get_audit(audit_id)
+    if not audit_data:
+        raise HTTPException(status_code=404, detail="Audit not found")
+    
+    results = audit_data.get("results")
+    sensitive_attrs = audit_data.get("sensitive_attrs")
+    
+    return StreamingResponse(
+        generate_bias_explanation_stream(results["metrics"], sensitive_attrs),
+        media_type="text/event-stream"
+    )
+
+@router.get("/settings/{user_id}")
+async def fetch_settings(user_id: str):
+    return get_user_settings(user_id)
+
+@router.post("/settings/{user_id}")
+async def update_settings(user_id: str, settings: Dict[str, Any]):
+    save_user_settings(user_id, settings)
+    return {"status": "success"}
 
 @router.get("/history")
 async def get_history():

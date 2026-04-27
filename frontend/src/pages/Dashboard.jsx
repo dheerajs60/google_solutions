@@ -47,41 +47,48 @@ export const Dashboard = () => {
         }
     }, [metrics, geminiExplanation, isAIAnalysing, aiAnalysisFailed, currentAuditId, fetchAIAnalysis]);
 
-    useEffect(() => {
-        if (geminiExplanation && !isLoading && !isAIAnalysing) {
-            setTypedExplanation('');
-            explanationRef.current = '';
-            const cleanup = geminiService.typewriteText(geminiExplanation, (text) => {
-                setTypedExplanation(text);
-            }, null, 25);
-            return cleanup;
-        }
-    }, [geminiExplanation, isLoading, isAIAnalysing]);
-
     if (isLoading) {
-        return <div className="flex h-[400px] flex-col items-center justify-center text-on-surface-variant font-medium gap-3">
-            <span className="material-symbols-outlined animate-spin text-primary text-3xl">progress_activity</span>
-            <span>Analyzing dataset for bias patterns...</span>
-        </div>;
+        return (
+            <div className="flex h-[400px] flex-col items-center justify-center gap-6 animate-pulse">
+                <div className="relative">
+                    <div className="h-20 w-20 rounded-full border-4 border-primary/10 border-t-primary animate-spin"></div>
+                    <span className="material-symbols-outlined absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary text-3xl">troubleshoot</span>
+                </div>
+                <div className="text-center">
+                    <h3 className="text-lg font-bold text-on-surface dark:text-white">Analyzing bias patterns...</h3>
+                    <p className="text-sm text-on-surface-variant dark:text-slate-400">Our forensic engine is evaluating demographic parity and error equity.</p>
+                </div>
+            </div>
+        );
     }
 
     if (error) {
         return (
-            <div className="flex h-[400px] flex-col items-center justify-center text-error font-medium gap-3">
-                <span className="material-symbols-outlined text-4xl">error</span>
-                <span>{error}</span>
-                <div className="flex gap-4 mt-4">
+            <div className="flex flex-col items-center justify-center min-h-[500px] gap-8 animate-in fade-in zoom-in duration-500">
+                <div className="w-24 h-24 rounded-3xl bg-error/5 flex items-center justify-center relative">
+                    <div className="absolute inset-0 bg-error/10 blur-2xl rounded-full animate-pulse"></div>
+                    <span className="material-symbols-outlined text-error text-5xl relative z-10">error_med</span>
+                </div>
+                
+                <div className="text-center max-w-md space-y-3">
+                    <h2 className="text-2xl font-black tracking-tight text-on-surface dark:text-white">Audit Integrity Compromised</h2>
+                    <p className="text-sm text-on-surface-variant leading-relaxed dark:text-slate-400">
+                        {error}. Ensure your dataset configuration matches the schema requirements.
+                    </p>
+                </div>
+
+                <div className="flex items-center gap-4">
                     <button 
-                        onClick={() => fetchAudit()}
-                        className="px-6 py-2 bg-primary text-white rounded-lg text-xs font-black uppercase tracking-widest active:scale-95 transition-transform shadow-md hover:shadow-primary/20"
+                        onClick={() => fetchAudit(currentAuditId)}
+                        className="px-8 py-4 bg-primary text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:-translate-y-1 active:scale-95 transition-all"
                     >
-                        Retry Audit
+                        Retry Audit Trace
                     </button>
                     <Link 
                         to="/upload"
-                        className="px-6 py-2 border border-primary/20 text-primary hover:bg-primary/5 rounded-lg text-xs font-black uppercase tracking-widest transition-colors"
+                        className="px-8 py-4 bg-white border border-outline-variant/20 text-on-surface rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all dark:bg-slate-900 dark:border-slate-800 dark:text-white dark:hover:bg-slate-800"
                     >
-                        Start New Audit
+                        Start New Protocol
                     </Link>
                 </div>
             </div>
@@ -90,21 +97,38 @@ export const Dashboard = () => {
 
     if (!metrics && !currentAuditId) {
         return (
-            <div className="flex h-[400px] flex-col items-center justify-center text-on-surface-variant font-medium gap-3">
-                <span className="material-symbols-outlined text-4xl text-outline-variant">analytics</span>
-                <span>No active audit found. Please upload a dataset to begin.</span>
+            <div className="flex flex-col items-center justify-center min-h-[500px] gap-8 animate-in fade-in zoom-in duration-500">
+                <div className="w-24 h-24 rounded-3xl bg-primary/5 flex items-center justify-center relative">
+                    <div className="absolute inset-0 bg-primary/10 blur-2xl rounded-full opacity-50"></div>
+                    <span className="material-symbols-outlined text-primary text-5xl relative z-10">biotech</span>
+                </div>
+                
+                <div className="text-center max-w-md space-y-3">
+                    <h2 className="text-2xl font-black tracking-tight text-on-surface dark:text-white">Awaiting Audit Stream</h2>
+                    <p className="text-sm text-on-surface-variant leading-relaxed dark:text-slate-400">
+                        No active fairness evaluation detected in the pipeline. Initialize a new audit by uploading a dataset.
+                    </p>
+                </div>
+
+                <Link 
+                    to="/upload"
+                    className="flex items-center gap-3 px-10 py-5 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-2xl hover:-translate-y-1 active:scale-95 transition-all dark:bg-primary"
+                >
+                    <span className="material-symbols-outlined text-[20px]">upload_file</span>
+                    Initialize New Audit
+                </Link>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col gap-8 pb-12 w-full animate-in fade-in duration-700">
+        <div className="flex flex-col gap-8 pb-12 w-full animate-in fade-in duration-700 transition-colors">
             {/* Educational Header */}
-            <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 flex items-start gap-4">
+            <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 flex items-start gap-4 dark:bg-slate-900 dark:border-slate-800">
                 <span className="material-symbols-outlined text-primary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>gavel</span>
                 <div>
                     <h3 className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-1">Audit Protocol: How it works</h3>
-                    <p className="text-[10px] text-on-surface-variant leading-relaxed max-w-3xl font-medium">
+                    <p className="text-[10px] text-on-surface-variant leading-relaxed max-w-3xl font-medium dark:text-slate-400">
                         This dashboard provides a high-fidelity overview of your model's fairness signature. The <strong>Integrity Score</strong> is a weighted average of three critical dimensions: <strong>Selection Parity</strong> (are outcomes balanced?), <strong>Error Equity</strong> (are mistakes distributed fairly?), and <strong>Impact Ratios</strong> (long-term societal effects). 
                         <br/><br/>
                         Use the <strong>Bias Lineage</strong> trace on the right to track how decisions moved through the audit pipe, and review the <strong>Lead Auditor's Report</strong> below for AI-driven clinical insights.
@@ -139,33 +163,35 @@ export const Dashboard = () => {
             {/* Row 2: Gemini Analysis and Lineage */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Gemini AI Explanation Panel */}
-                <div className="lg:col-span-2 card-layer border-l-4 border-l-primary p-6 relative overflow-hidden bg-white">
+                <div className="lg:col-span-2 card-layer border-l-4 border-l-primary p-6 relative overflow-hidden bg-white dark:bg-slate-900 transition-colors duration-300">
                     <div className="absolute top-0 right-0 p-4">
-                        <div className="flex items-center space-x-1.5 bg-primary/5 px-3 py-1 rounded-full">
+                        <div className="flex items-center space-x-1.5 bg-primary/5 px-3 py-1 rounded-full dark:bg-primary/10">
                             <span className="material-symbols-outlined text-[14px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
-                            <span className="text-[10px] font-bold text-primary tracking-tight uppercase">Powered by Gemini 1.5 Pro</span>
+                            <span className="text-[10px] font-bold text-primary tracking-tight uppercase">Vertex AI • Gemini 1.5 Pro</span>
                         </div>
                     </div>
-                    <h2 className="text-xl font-bold tracking-tight text-on-surface mb-4">Why bias was detected</h2>
+                    <h2 className="text-xl font-bold tracking-tight text-on-surface mb-4 dark:text-white">Forensic Bias Analysis</h2>
                     <div className="space-y-4 max-w-2xl min-h-[140px]">
-                        {isAIAnalysing && !typedExplanation ? (
+                        {isAIAnalysing && !geminiExplanation ? (
                             <div className="space-y-3 animate-pulse">
-                                <div className="h-2.5 bg-slate-100 rounded-full w-48"></div>
-                                <div className="h-2 bg-slate-100 rounded-full max-w-[480px]"></div>
-                                <div className="h-2 bg-slate-100 rounded-full max-w-[400px]"></div>
-                                <div className="h-2 bg-slate-100 rounded-full max-w-[440px]"></div>
+                                <div className="h-2.5 bg-slate-100 rounded-full w-48 dark:bg-slate-800"></div>
+                                <div className="h-2 bg-slate-100 rounded-full max-w-[480px] dark:bg-slate-800"></div>
+                                <div className="h-2 bg-slate-100 rounded-full max-w-[400px] dark:bg-slate-800"></div>
+                                <div className="h-2 bg-slate-100 rounded-full max-w-[440px] dark:bg-slate-800"></div>
                                 <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-4">Forensic Auditor is thinking...</p>
                             </div>
-                        ) : typedExplanation ? (
+                        ) : geminiExplanation ? (
                             <>
-                                <p className="text-on-surface-variant leading-relaxed text-sm">
-                                    {typedExplanation}
+                                <p className="text-on-surface-variant leading-relaxed text-sm dark:text-slate-300">
+                                    {geminiExplanation}
                                     {isAIAnalysing && <span className="inline-block w-1.5 h-4 ml-1 bg-primary animate-pulse"></span>}
                                 </p>
-                                <Link to="/heatmap" className="inline-flex items-center text-primary font-bold text-xs hover:underline mt-2">
-                                    View full analysis
-                                    <span className="material-symbols-outlined text-sm ml-1">arrow_forward</span>
-                                </Link>
+                                <div className="flex items-center gap-4 mt-6">
+                                    <Link to="/heatmap" className="inline-flex items-center text-primary font-bold text-xs hover:underline">
+                                        View full analysis
+                                        <span className="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+                                    </Link>
+                                </div>
                             </>
                         ) : aiAnalysisFailed ? (
                             <div className="py-4 px-4 bg-error/10 border border-error/20 rounded-xl">

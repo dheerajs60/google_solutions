@@ -22,12 +22,15 @@ export const useAuditStore = create(
                 const auditId = id || get().auditId;
                 if (!auditId) return;
                 
-                set({ isAIAnalysing: true, aiAnalysisFailed: false });
+                set({ isAIAnalysing: true, aiAnalysisFailed: false, geminiExplanation: '' });
                 try {
-                    const data = await auditService.getAnalysis(auditId);
-                    set({ geminiExplanation: data.explanation });
+                    await auditService.getAnalysisStream(auditId, (chunk) => {
+                        set((state) => ({ 
+                            geminiExplanation: state.geminiExplanation + chunk 
+                        }));
+                    });
                 } catch (err) {
-                    console.error("AI Analysis fetch failed:", err);
+                    console.error("AI Analysis streaming failed:", err);
                     set({ aiAnalysisFailed: true });
                 } finally {
                     set({ isAIAnalysing: false });

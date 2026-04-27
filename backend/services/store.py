@@ -161,3 +161,23 @@ def get_audit(audit_id: str) -> Dict[str, Any]:
 def get_audit_results(audit_id: str) -> Dict[str, Any]:
     audit = get_audit(audit_id)
     return audit.get("results") if audit else None
+
+def save_user_settings(user_id: str, settings: Dict[str, Any]):
+    if not db:
+        return
+    try:
+        doc_ref = db.collection("user_settings").document(user_id)
+        doc_ref.set(settings, merge=True)
+    except Exception as e:
+        print(f"Error saving user settings: {e}")
+
+def get_user_settings(user_id: str) -> Dict[str, Any]:
+    if not db:
+        return {}
+    try:
+        doc = db.collection("user_settings").document(user_id).get()
+        if doc.exists:
+            return doc.to_dict()
+    except Exception as e:
+        print(f"Error fetching user settings: {e}")
+    return {}

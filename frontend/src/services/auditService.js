@@ -1,4 +1,5 @@
 import apiClient from './api';
+import { auth } from '../config/firebase';
 
 class AuditService {
     async runAudit(file, targetColumn, sensitiveAttributes, positiveLabel) {
@@ -34,8 +35,40 @@ class AuditService {
         return response.data;
     }
     
+    async getAnalysisStream(auditId, onChunk) {
+        const baseURL = apiClient.defaults.baseURL || '';
+        const url = `${baseURL}/audit/${auditId}/analysis/stream`;
+        const token = await auth.currentUser.getIdToken();
+        
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            onChunk(chunk);
+        }
+    }
+    
     async getHistory() {
         const response = await apiClient.get('/audit/history');
+        return response.data;
+    }
+
+    async getSettings(userId) {
+        const response = await apiClient.get(`/audit/settings/${userId}`);
+        return response.data;
+    }
+
+    async updateSettings(userId, settings) {
+        const response = await apiClient.post(`/audit/settings/${userId}`, settings);
         return response.data;
     }
 }

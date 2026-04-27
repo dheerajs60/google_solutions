@@ -1,18 +1,23 @@
 import os
-import google.generativeai as genai
+import vertexai
+from vertexai.generative_models import GenerativeModel, Part, FinishReason
+import vertexai.preview.generative_models as generative_models
 from dotenv import load_dotenv
 
 # Load .env from root or current dir
 load_dotenv()
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "solutions-89747")
+LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION", "asia-south2")
 
-model = genai.GenerativeModel('models/gemini-2.0-flash')
+vertexai.init(project=PROJECT_ID, location=LOCATION)
 
-def generate_bias_explanation(metrics: dict, sensitive_attrs: list[str]) -> str:
+model = GenerativeModel("gemini-1.5-pro-002")
+
+def generate_bias_explanation_stream(metrics: dict, sensitive_attrs: list[str]):
     """
-    Generates a professional bias audit explanation using Gemini 1.5 Pro.
+    Generates a professional bias audit explanation using Vertex AI Gemini 1.5 Pro (Streaming).
     """
     prompt = f"""
     You are the Lead Forensic Pathologist at 'FairLens Auditor'. 
@@ -38,8 +43,28 @@ def generate_bias_explanation(metrics: dict, sensitive_attrs: list[str]) -> str:
     """
     
     try:
-        response = model.generate_content(prompt)
+        responses = model.generate_content(
+            prompt,
+            generation_config={"max_output_tokens": 1024, "temperature": 0.2},
+            stream=True
+        )
+        for response in responses:
+            if response.text:
+                yield response.text
+    except Exception as e:
+        print(f"Vertex AI (Gemini) Error: {e}")
+        yield f"Error generating auditor report: {str(e)}"
+
+def generate_bias_explanation(metrics: dict, sensitive_attrs: list[str]) -> str:
+    """
+    Non-streaming version for backward compatibility.
+    """
+    try:
+        response = model.generate_content(
+            f"Summarize bias in 100 words: {str(metrics)} for {sensitive_attrs}",
+            generation_config={"max_output_tokens": 512, "temperature": 0.2}
+        )
         return response.text.strip()
     except Exception as e:
-        print(f"Gemini API Error: {e}")
-        return None  # Let the frontend handle the retry
+        print(f"Vertex AI Error: {e}")
+        return "Analysis unavailable."

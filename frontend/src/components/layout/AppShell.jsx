@@ -9,7 +9,7 @@ export const AppShell = ({ children }) => {
     const isFocusedFlow = ['/upload', '/attribute-selection', '/'].includes(location.pathname);
     
     return (
-        <div className="flex h-screen bg-surface">
+        <div className="flex h-screen bg-surface transition-colors duration-300 dark:bg-slate-950">
             {!isFocusedFlow && <Sidebar />}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
                 <Topbar />
