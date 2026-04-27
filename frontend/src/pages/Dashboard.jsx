@@ -72,6 +72,34 @@ export const Dashboard = () => {
     }
 
     if (error) {
+        const is404 = error.includes('404') || error.includes('not found');
+        
+        if (is404) {
+            // If it's a 404, just show the the same "Initialize" screen as no metrics
+            return (
+                <div className="flex flex-col gap-10 w-full animate-in fade-in py-10">
+                    <div className="flex flex-col items-center justify-center min-h-[300px] gap-8 bg-slate-50 rounded-3xl border border-slate-100 p-12 dark:bg-slate-900/50 dark:border-slate-800 transition-colors">
+                        <div className="w-20 h-20 rounded-2xl bg-amber-50 flex items-center justify-center dark:bg-amber-900/20">
+                            <span className="material-symbols-outlined text-amber-600 text-4xl">inventory_2</span>
+                        </div>
+                        <div className="text-center max-w-lg space-y-3">
+                            <h2 className="text-2xl font-black tracking-tight text-on-surface dark:text-white">Audit Session Expired</h2>
+                            <p className="text-sm text-on-surface-variant leading-relaxed dark:text-slate-400 font-medium">
+                                The requested audit record could not be found or has expired from the cache. Start a new protocol to continue.
+                            </p>
+                        </div>
+                        <Link 
+                            to="/upload"
+                            className="flex items-center gap-3 px-10 py-4 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl hover:-translate-y-1 active:scale-95 transition-all dark:bg-primary"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">upload_file</span>
+                            Start New Audit
+                        </Link>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className="flex flex-col items-center justify-center min-h-[500px] gap-8 animate-in fade-in zoom-in duration-500">
                 <div className="w-24 h-24 rounded-3xl bg-error/5 flex items-center justify-center relative">

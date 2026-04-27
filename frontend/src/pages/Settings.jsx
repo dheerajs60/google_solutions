@@ -121,7 +121,9 @@ export const Settings = () => {
         <div className="flex flex-col gap-10 w-full animate-in fade-in py-10 pb-12 transition-colors duration-300">
             <div className="flex items-end justify-between border-b border-outline-variant/10 pb-10 dark:border-slate-800">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tighter text-on-surface mb-2 dark:text-white transition-colors duration-300">Protocol Settings</h1>
+                    <h1 className="text-4xl font-black tracking-tighter text-on-surface mb-2 dark:text-white transition-colors duration-300">
+                        {activeTab === 'profile' ? 'Profile Information' : 'Protocol Settings'}
+                    </h1>
                     <p className="text-on-surface-variant text-sm max-w-lg leading-relaxed dark:text-slate-400">
                         Configure your auditing environment, security protocols, and integration preferences for the FairLens platform.
                     </p>

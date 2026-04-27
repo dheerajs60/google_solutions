@@ -51,20 +51,18 @@ export const Topbar = () => {
                 )}
                 
                 <div className="flex items-center space-x-4">
-                    <div className="relative group cursor-pointer" onClick={() => navigate('/settings?tab=config')}>
-                        <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors dark:text-slate-400 dark:group-hover:text-primary">notifications</span>
-                        <span className="absolute top-0 right-0 w-2 h-2 bg-error rounded-full border-2 border-white dark:border-slate-900"></span>
-                    </div>
-                    
                     <div className="flex items-center space-x-2 cursor-pointer group" onClick={() => navigate('/settings?tab=profile')}>
-                        <span className="text-xs font-semibold text-on-surface-variant hidden md:block dark:text-slate-400 group-hover:text-primary transition-colors">
-                            {user?.displayName || user?.email?.split('@')[0] || "Forensic Agent"}
-                        </span>
-                        <div className="h-8 w-8 rounded-full overflow-hidden border border-outline-variant/30 flex items-center justify-center bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 group-hover:border-primary transition-colors">
+                        <div className="flex flex-col items-end mr-1">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-primary leading-none mb-1">Lead Auditor</span>
+                            <span className="text-xs font-bold text-on-surface-variant dark:text-slate-200 group-hover:text-primary transition-colors">
+                                {user?.displayName || user?.email?.split('@')[0] || "Forensic Agent"}
+                            </span>
+                        </div>
+                        <div className="h-10 w-10 rounded-xl overflow-hidden border-2 border-outline-variant/30 flex items-center justify-center bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 group-hover:border-primary transition-colors shadow-sm">
                             {user?.photoURL ? (
                                 <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
                             ) : (
-                                <span className="material-symbols-outlined text-on-surface-variant text-[20px] dark:text-slate-400">person</span>
+                                <span className="material-symbols-outlined text-on-surface-variant text-[24px] dark:text-slate-400">person</span>
                             )}
                         </div>
                     </div>
