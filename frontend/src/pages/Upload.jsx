@@ -61,7 +61,17 @@ export const Upload = () => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center w-full max-w-2xl mx-auto py-12 animate-in fade-in duration-700">
+        <div className="flex flex-col items-center justify-center w-full max-w-2xl mx-auto py-12 animate-in fade-in duration-700 relative">
+            
+            {/* Top Left Go Back Arrow */}
+            <button 
+                onClick={() => navigate('/dashboard')}
+                className="absolute top-12 left-0 flex items-center justify-center p-3 text-on-surface-variant hover:bg-slate-100 hover:text-primary rounded-full transition-all group"
+                title="Go back to Dashboard"
+            >
+                <span className="material-symbols-outlined text-[24px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+            </button>
+
             {/* Step Indicators */}
             <div className="flex justify-center items-center gap-3 mb-10">
                 <div className="flex items-center gap-2">

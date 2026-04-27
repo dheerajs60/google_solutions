@@ -1,18 +1,18 @@
 import os
-import google.generativeai as genai
+import vertexai
+from vertexai.generative_models import GenerativeModel
 from dotenv import load_dotenv
 
 # Load .env from root or current dir
 load_dotenv()
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
 
-api_key = os.getenv("GEMINI_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-1.5-flash")
-else:
-    print("WARNING: GEMINI_API_KEY not found in environment.")
-    model = None
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "solutions-89747")
+# Hardcoded to us-central1 because asia-south2 does not support gemini-1.5-flash
+LOCATION = "us-central1"
+
+vertexai.init(project=PROJECT_ID, location=LOCATION)
+model = GenerativeModel("gemini-1.5-flash")
 
 def generate_bias_explanation_stream(metrics: dict, sensitive_attrs: list[str]):
     """
