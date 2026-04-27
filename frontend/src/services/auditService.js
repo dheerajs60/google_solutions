@@ -73,6 +73,10 @@ class AuditService {
         const response = await apiClient.post(`/audit/settings/${userId}`, settings);
         return response.data;
     }
+    
+    getUserId() {
+        return auth.currentUser?.uid;
+    }
 }
 
 export const auditService = new AuditService();
