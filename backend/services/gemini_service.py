@@ -53,10 +53,12 @@ def generate_bias_explanation_stream(metrics: dict, sensitive_attrs: list[str]):
                 yield response.text
     except Exception as e:
         error_msg = str(e)
+        # Log full error to terminal for debugging
+        print(f"CRITICAL: Vertex AI Error Details: {error_msg}")
+        
         if "403" in error_msg and "aiplatform.googleapis.com" in error_msg:
-            yield "### Action Required: Enable Vertex AI API\n\nVertex AI API is currently disabled for this project. To see forensic AI reports, please authorize the service here: [Enable Vertex AI API](https://console.developers.google.com/apis/api/aiplatform.googleapis.com/overview?project=solutions-89747).\n\nOnce enabled, retry the analysis."
+            yield f"### Action Required: Check Permissions\n\nVertex AI is failing with a 403 error in project `{PROJECT_ID}`. \n\n1. Ensure the **Vertex AI API** is enabled.\n2. Ensure the Cloud Run service account has the **Vertex AI User** role.\n\nTechnical Details: {error_msg[:200]}..."
         else:
-            print(f"Vertex AI (Gemini) Error: {e}")
             yield f"Error generating auditor report: {error_msg}"
 
 def generate_bias_explanation(metrics: dict, sensitive_attrs: list[str]) -> str:
