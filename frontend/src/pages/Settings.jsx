@@ -1,12 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useAuthStore from '../store/useAuthStore';
+import { signOut } from '../services/authService';
+import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 
 export const Settings = () => {
-    const { user } = useAuthStore();
+    const { user, theme, setTheme } = useAuthStore();
+    const navigate = useNavigate();
     const [notifications, setNotifications] = useState(true);
     const [auditAutoSave, setAuditAutoSave] = useState(true);
-    const [theme, setTheme] = useState('light');
+
+    const handleLogout = async () => {
+        try {
+            await signOut();
+            navigate('/');
+        } catch (error) {
+            console.error('Logout failed', error);
+        }
+    };
+
+    const handleThemeChange = (e) => {
+        const newTheme = e.target.value.toLowerCase();
+        setTheme(newTheme);
+    };
 
     const sections = [
         {
@@ -33,7 +49,7 @@ export const Settings = () => {
             description: 'Global application monitoring and security',
             fields: [
                 { label: 'Email Notifications', value: notifications, type: 'toggle', onChange: () => setNotifications(!notifications) },
-                { label: 'Interface Theme', value: theme, type: 'select', options: ['Light', 'Dark', 'System'], onChange: (e) => setTheme(e.target.value.toLowerCase()) }
+                { label: 'Interface Theme', value: theme.charAt(0).toUpperCase() + theme.slice(1), type: 'select', options: ['Light', 'Dark'], onChange: handleThemeChange }
             ]
         }
     ];
@@ -48,9 +64,17 @@ export const Settings = () => {
                     </p>
                 </div>
                 
-                <button className="flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all">
-                    Save Changes
-                </button>
+                <div className="flex gap-4">
+                    <button 
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 px-6 py-3 border border-error/20 text-error rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-error/5 active:scale-95 transition-all"
+                    >
+                        Sign Out
+                    </button>
+                    <button className="flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all">
+                        Save Changes
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
@@ -131,7 +155,7 @@ export const Settings = () => {
                                             </button>
                                         ) : field.type === 'select' ? (
                                             <select 
-                                                className="w-full p-4 bg-white border border-outline-variant/10 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+                                                className="w-full p-4 bg-white border border-outline-variant/10 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all dark:bg-slate-800 dark:text-white"
                                                 onChange={field.onChange}
                                                 value={field.value}
                                             >
@@ -142,7 +166,7 @@ export const Settings = () => {
                                                 type={field.type}
                                                 defaultValue={field.value}
                                                 disabled={field.disabled}
-                                                className="w-full p-4 bg-white border border-outline-variant/10 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all disabled:bg-slate-50 disabled:text-on-surface-variant/50"
+                                                className="w-full p-4 bg-white border border-outline-variant/10 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all disabled:bg-slate-50 disabled:text-on-surface-variant/50 dark:bg-slate-800 dark:text-white"
                                             />
                                         )}
                                     </div>

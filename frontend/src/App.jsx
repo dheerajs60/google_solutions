@@ -18,9 +18,16 @@ import useAuthStore from './store/useAuthStore';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 function App() {
-  const { setUser, clearUser, isLoading, isAuthenticated } = useAuthStore();
+  const { setUser, clearUser, isLoading, isAuthenticated, theme } = useAuthStore();
 
   useEffect(() => {
+    // Apply theme on mount
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+
     const unsubscribe = onAuthStateChanged((user) => {
       if (user) {
         setUser(user);

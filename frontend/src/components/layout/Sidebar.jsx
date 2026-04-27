@@ -1,8 +1,11 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
+import { signOut } from '../../services/authService';
 
 export const Sidebar = () => {
+    const navigate = useNavigate();
+    
     const navItems = [
         { path: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
         { path: '/heatmap', icon: 'grid_view', label: 'Bias Heatmap' },
@@ -10,6 +13,15 @@ export const Sidebar = () => {
         { path: '/report', icon: 'description', label: 'Compliance Report' },
         { path: '/history', icon: 'history', label: 'Audit History' }
     ];
+
+    const handleLogout = async () => {
+        try {
+            await signOut();
+            navigate('/');
+        } catch (error) {
+            console.error('Logout failed', error);
+        }
+    };
 
     return (
         <aside className="h-screen w-64 flex flex-col p-4 space-y-2 bg-slate-50 border-r border-slate-200 z-50 shrink-0">
@@ -51,6 +63,14 @@ export const Sidebar = () => {
                     <span className="material-symbols-outlined text-[22px]">settings</span>
                     <span>Settings</span>
                 </NavLink>
+
+                <button 
+                    onClick={handleLogout}
+                    className="flex items-center w-full px-3 py-2 space-x-3 text-sm font-medium text-error hover:bg-error/5 transition-all duration-200 ease-in-out rounded-lg"
+                >
+                    <span className="material-symbols-outlined text-[22px]">logout</span>
+                    <span>Logout</span>
+                </button>
             </div>
         </aside>
     );
