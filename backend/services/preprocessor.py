@@ -62,10 +62,11 @@ def preprocess_data(df: pd.DataFrame, target_column: str, sensitive_attributes: 
                 df[col] = df[col].fillna(mode_val)
                 log.append(f"Filled {missing_count} missing values in categorical column '{col}' with mode '{mode_val}'")
                 
-    # 5. Encode categorical columns (except target and sensitive attributes)
+    # 5. Encode categorical columns (except target)
     for col in df.columns:
-        if col != target_column and col not in sensitive_attributes:
+        if col != target_column:
             if not pd.api.types.is_numeric_dtype(df[col]):
+                # Convert to codes but KEEP the column name the same for bias analysis
                 df[col] = pd.Categorical(df[col]).codes
                 log.append(f"Encoded categorical column '{col}' to numeric")
                 

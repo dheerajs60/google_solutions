@@ -91,7 +91,12 @@ async def run_audit(
         except Exception as e:
             print(f"Warning: Could not upload to Firestore: {e}")
         
-        df = pd.read_csv(io.StringIO(contents.decode("utf-8")))
+        # Robust CSV reading from bytes
+        try:
+            df = pd.read_csv(io.BytesIO(contents))
+        except Exception:
+            # Fallback for weird encodings
+            df = pd.read_csv(io.StringIO(contents.decode("utf-8", errors="ignore")))
         
         sensitive_attrs = [attr.strip() for attr in sensitive_attributes.split(",") if attr.strip()]
         
