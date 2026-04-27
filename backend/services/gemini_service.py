@@ -63,12 +63,13 @@ def generate_bias_explanation_stream(metrics: dict, sensitive_attrs: list[str]):
                 yield response.text
     except Exception as e:
         error_msg = str(e)
-        print(f"GenAI API failure: {error_msg}")
+        print(f"Vertex AI API failure: {error_msg}")
         
-        # If it's a quota or other error, fallback to simulated report
-        yield "\n\n### [SIMULATED FORENSIC REPORT]\n\n"
-        yield "The generative AI service is currently unavailable or over quota. "
-        yield "While that synchronizes, the FairLens heuristic engine has generated this forensic summary:\n\n"
+        # Expose the EXACT error to the frontend so the user can easily debug
+        yield "\n\n### [VERTEX AI EXCEPTION LOG]\n\n"
+        yield f"**Error Details:** {error_msg}\n\n"
+        yield "---\n\n"
+        yield "*While that issue is being resolved in your Google Cloud Console, the FairLens heuristic engine has generated this fallback summary:*\n\n"
         
         simulated_analysis = generate_simulated_report(metrics)
         for chunk in simulated_analysis.split(" "):
