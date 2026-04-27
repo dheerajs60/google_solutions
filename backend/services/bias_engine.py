@@ -35,12 +35,28 @@ def run_bias_analysis(df: pd.DataFrame, sensitive_attrs: list[str], target_col: 
     y = (target_series == norm_positive_label).astype(int)
     X = df.drop(columns=[target_col])
     
+    # Ensure sensitive_attrs does not contain target_col
+    sensitive_attrs = [attr for attr in sensitive_attrs if attr != target_col]
+    
+    if not sensitive_attrs:
+        raise ValueError("No valid sensitive attributes remaining. You cannot select only the outcome column as a protected attribute.")
+
     # 2. Train Test Split
     X_train_full, X_test_full, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
     
     # Separate Sensitive attributes from X arrays
-    sensitive_train = X_train_full[sensitive_attrs].copy()
-    sensitive_test = X_test_full[sensitive_attrs].copy()
+    # And bin highly continuous variables to avoid OOM or timeout during Fairlearn metrics
+    sensitive_train = pd.DataFrame()
+    sensitive_test = pd.DataFrame()
+    
+    for attr in sensitive_attrs:
+        if attr in X_train_full.columns:
+            if X_train_full[attr].nunique() > 20: # Bin continuous variables
+                sensitive_train[attr] = pd.qcut(X_train_full[attr], q=5, duplicates='drop').astype(str)
+                sensitive_test[attr] = pd.qcut(X_test_full[attr], q=5, duplicates='drop').astype(str)
+            else:
+                sensitive_train[attr] = X_train_full[attr]
+                sensitive_test[attr] = X_test_full[attr]
     
     X_train = X_train_full.drop(columns=sensitive_attrs, errors='ignore')
     X_test = X_test_full.drop(columns=sensitive_attrs, errors='ignore')
