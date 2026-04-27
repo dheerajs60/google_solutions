@@ -10,8 +10,8 @@ from backend.config.bigquery_client import bq_client, project_id
 # Global in-memory dictionary to store audit states.
 ACTIVE_AUDITS: Dict[str, Dict[str, Any]] = {}
 
-def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = None):
-    ACTIVE_AUDITS[audit_id] = {**data, "results": results}
+def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = None, user_id: str = None):
+    ACTIVE_AUDITS[audit_id] = {**data, "results": results, "user_id": user_id}
     
     overall_score = results.get("overall_score", 0.0) if results else 0.0
     status = "PASS" if overall_score > 0.9 else "WARNING" if overall_score > 0.8 else "FAIL"
@@ -26,6 +26,7 @@ def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = N
             doc_ref = db.collection("audit_history").document(audit_id)
             doc_ref.set({
                 "id": audit_id,
+                "user_id": user_id,
                 "dataset": dataset_name,
                 "date": timestamp,
                 "model_type": model_type,
@@ -45,7 +46,7 @@ def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = N
                 k: v for k, v in data.items() 
                 if k in ["dataset", "date", "model_type", "sensitive_attrs", "target_column", "positive_label"]
             }
-            full_details = {**serializable_data, "results": results}
+            full_details = {**serializable_data, "results": results, "user_id": user_id}
             table_ref = f"{project_id}.fair_audit.audits"
             
             # Convert nested dict into json string
@@ -87,13 +88,16 @@ def update_mitigation_results(audit_id: str, mitigation_res: Dict[str, Any]):
     if audit_id in ACTIVE_AUDITS:
         ACTIVE_AUDITS[audit_id]["mitigation_results"] = mitigation_res
 
-def get_history() -> List[Dict[str, Any]]:
+def get_history(user_id: str = None) -> List[Dict[str, Any]]:
     history = []
     
     # 1. Try Firestore first
     if db:
         try:
-            docs = db.collection("audit_history").stream()
+            query = db.collection("audit_history")
+            if user_id:
+                query = query.where("user_id", "==", user_id)
+            docs = query.order_by("date", direction=firestore.Query.DESCENDING).limit(50).stream()
             for doc in docs:
                 history.append(doc.to_dict())
         except Exception as e:
@@ -102,7 +106,10 @@ def get_history() -> List[Dict[str, Any]]:
     # 2. If nothing in Firestore, fallback to BigQuery
     if not history and bq_client:
         try:
-            query = f"SELECT audit_id, full_details FROM `{project_id}.fair_audit.audits` ORDER BY audit_id DESC LIMIT 50"
+            query = f"SELECT audit_id, full_details FROM `{project_id}.fair_audit.audits`"
+            if user_id:
+                 query += f" WHERE JSON_EXTRACT_SCALAR(full_details, '$.user_id') = '{user_id}'"
+            query += " ORDER BY audit_id DESC LIMIT 50"
             results = bq_client.query(query).result()
             for row in results:
                 details = json.loads(row.full_details)

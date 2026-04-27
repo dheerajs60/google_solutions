@@ -58,8 +58,8 @@ async def update_settings(user_id: str, settings: Dict[str, Any]):
     return {"status": "success"}
 
 @router.get("/history")
-async def get_history():
-    return store_get_history()
+async def get_history(user_id: str = None):
+    return store_get_history(user_id)
 
 @router.get("/{audit_id}", response_model=AuditResponse)
 async def read_audit(audit_id: str):
@@ -73,7 +73,8 @@ async def run_audit(
     file: UploadFile = File(...),
     sensitive_attributes: str = Form(...),
     target_column: str = Form(...),
-    positive_label: str = Form(...)
+    positive_label: str = Form(...),
+    user_id: str = Form(None)
 ):
     try:
         contents = await file.read()
@@ -106,7 +107,7 @@ async def run_audit(
             "target_column": target_column,
             "positive_label": positive_label
         }
-        store_audit(result_dict["id"], data_to_store, result_dict)
+        store_audit(result_dict["id"], data_to_store, result_dict, user_id=user_id)
         
         return result_dict
     except Exception as e:

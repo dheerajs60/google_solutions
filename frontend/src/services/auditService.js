@@ -2,12 +2,13 @@ import apiClient from './api';
 import { auth } from '../config/firebase';
 
 class AuditService {
-    async runAudit(file, targetColumn, sensitiveAttributes, positiveLabel) {
+    async runAudit(file, sensitiveAttributes, targetColumn, positiveLabel, userId = null) {
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('sensitive_attributes', sensitiveAttributes);
         formData.append('target_column', targetColumn);
-        formData.append('sensitive_attributes', sensitiveAttributes.join(','));
         formData.append('positive_label', positiveLabel);
+        if (userId) formData.append('user_id', userId);
         
         const response = await apiClient.post('/audit/run', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
@@ -57,8 +58,9 @@ class AuditService {
         }
     }
     
-    async getHistory() {
-        const response = await apiClient.get('/audit/history');
+    async getHistory(userId = null) {
+        const params = userId ? { user_id: userId } : {};
+        const response = await apiClient.get('/audit/history', { params });
         return response.data;
     }
 

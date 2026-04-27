@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { auditService } from '../services/auditService';
 import { useNavigate } from 'react-router-dom';
+import useAuthStore from '../store/useAuthStore';
 import clsx from 'clsx';
 
 export const AuditHistory = () => {
@@ -8,7 +9,8 @@ export const AuditHistory = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        auditService.getHistory().then(setHistory);
+        const userId = useAuthStore.getState().user?.uid;
+        auditService.getHistory(userId).then(setHistory);
     }, []);
 
     return (
@@ -25,10 +27,10 @@ export const AuditHistory = () => {
                     </p>
                 </div>
             </div>
-            <div className="flex items-end justify-between border-b border-outline-variant/10 pb-10">
+            <div className="flex items-end justify-between border-b border-outline-variant/10 pb-10 dark:border-slate-800">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tighter text-on-surface mb-2">Audit Ledger</h1>
-                    <p className="text-on-surface-variant text-sm max-w-lg leading-relaxed">
+                    <h1 className="text-4xl font-black tracking-tighter text-on-surface mb-2 dark:text-white">Audit Ledger</h1>
+                    <p className="text-on-surface-variant text-sm max-w-lg leading-relaxed dark:text-slate-400">
                         A centralized record of all automated fairness evaluations and compliance validations conducted within the platform.
                     </p>
                 </div>
@@ -49,15 +51,15 @@ export const AuditHistory = () => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-3xl ring-1 ring-outline-variant/10 shadow-xl overflow-hidden">
+            <div className="bg-white rounded-3xl ring-1 ring-outline-variant/10 shadow-xl overflow-hidden dark:bg-slate-900 dark:ring-slate-800">
                 <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-50 border-b border-slate-100">
+                    <thead className="bg-slate-50 border-b border-slate-100 dark:bg-slate-800 dark:border-slate-700">
                         <tr>
-                            <th className="py-6 px-10 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Protocol Entity</th>
-                            <th className="py-6 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Classification</th>
-                            <th className="py-6 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Timestamp</th>
-                            <th className="py-6 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Integrity</th>
-                            <th className="py-6 px-10 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant text-right">Validation</th>
+                            <th className="py-6 px-10 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant dark:text-slate-400">Protocol Entity</th>
+                            <th className="py-6 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant dark:text-slate-400">Classification</th>
+                            <th className="py-6 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant dark:text-slate-400">Timestamp</th>
+                            <th className="py-6 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant dark:text-slate-400">Integrity</th>
+                            <th className="py-6 px-10 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant text-right dark:text-slate-400">Validation</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -73,8 +75,8 @@ export const AuditHistory = () => {
                                             <span className="material-symbols-outlined text-[20px]">dataset</span>
                                         </div>
                                         <div>
-                                            <p className="text-xs font-black text-on-surface tracking-tight">{row.dataset}</p>
-                                            <p className="text-[10px] text-on-surface-variant uppercase font-medium">Record ID: {row.id?.substring(0, 8).toUpperCase()}</p>
+                                            <p className="text-xs font-black text-on-surface tracking-tight dark:text-white">{row.dataset}</p>
+                                            <p className="text-[10px] text-on-surface-variant uppercase font-medium dark:text-slate-500">Record ID: {row.id?.substring(0, 8).toUpperCase()}</p>
                                         </div>
                                     </div>
                                 </td>

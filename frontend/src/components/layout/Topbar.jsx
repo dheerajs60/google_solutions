@@ -51,12 +51,12 @@ export const Topbar = () => {
                 )}
                 
                 <div className="flex items-center space-x-4">
-                    <div className="relative group cursor-pointer" onClick={() => navigate('/settings')}>
+                    <div className="relative group cursor-pointer" onClick={() => navigate('/settings?tab=config')}>
                         <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors dark:text-slate-400 dark:group-hover:text-primary">notifications</span>
                         <span className="absolute top-0 right-0 w-2 h-2 bg-error rounded-full border-2 border-white dark:border-slate-900"></span>
                     </div>
                     
-                    <div className="flex items-center space-x-2 cursor-pointer group" onClick={() => navigate('/settings')}>
+                    <div className="flex items-center space-x-2 cursor-pointer group" onClick={() => navigate('/settings?tab=profile')}>
                         <span className="text-xs font-semibold text-on-surface-variant hidden md:block dark:text-slate-400 group-hover:text-primary transition-colors">
                             {user?.displayName || user?.email?.split('@')[0] || "Forensic Agent"}
                         </span>

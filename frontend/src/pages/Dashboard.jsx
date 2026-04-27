@@ -25,6 +25,7 @@ export const Dashboard = () => {
         mitigationActive 
     } = useAuditStore();
     
+    const [recentActivites, setRecentActivities] = useState([]);
     const location = useLocation();
     const [typedExplanation, setTypedExplanation] = useState('');
     const explanationRef = useRef('');
@@ -46,6 +47,14 @@ export const Dashboard = () => {
             fetchAIAnalysis(currentAuditId);
         }
     }, [metrics, geminiExplanation, isAIAnalysing, aiAnalysisFailed, currentAuditId, fetchAIAnalysis]);
+    
+    // Fetch real history for the dashboard
+    useEffect(() => {
+        const userId = auditService.getUserId();
+        auditService.getHistory(userId).then(data => {
+            setRecentActivities(data.slice(0, 3));
+        });
+    }, []);
 
     if (isLoading) {
         return (
@@ -97,26 +106,83 @@ export const Dashboard = () => {
 
     if (!metrics && !currentAuditId) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[500px] gap-8 animate-in fade-in zoom-in duration-500">
-                <div className="w-24 h-24 rounded-3xl bg-primary/5 flex items-center justify-center relative">
-                    <div className="absolute inset-0 bg-primary/10 blur-2xl rounded-full opacity-50"></div>
-                    <span className="material-symbols-outlined text-primary text-5xl relative z-10">biotech</span>
-                </div>
-                
-                <div className="text-center max-w-md space-y-3">
-                    <h2 className="text-2xl font-black tracking-tight text-on-surface dark:text-white">Awaiting Audit Stream</h2>
-                    <p className="text-sm text-on-surface-variant leading-relaxed dark:text-slate-400">
-                        No active fairness evaluation detected in the pipeline. Initialize a new audit by uploading a dataset.
-                    </p>
+            <div className="flex flex-col gap-10 w-full animate-in fade-in py-10">
+                <div className="flex flex-col items-center justify-center min-h-[300px] gap-8 bg-slate-50 rounded-3xl border border-slate-100 p-12 dark:bg-slate-900/50 dark:border-slate-800 transition-colors">
+                    <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-primary text-4xl">analytics</span>
+                    </div>
+                    <div className="text-center max-w-lg space-y-3">
+                        <h2 className="text-2xl font-black tracking-tight text-on-surface dark:text-white">Initialize Your Auditing Protocol</h2>
+                        <p className="text-sm text-on-surface-variant leading-relaxed dark:text-slate-400 font-medium">
+                            The FairLens dashboard is ready for analysis. Upload a dataset or select a historical record from the ledger below to start investigating bias signatures.
+                        </p>
+                    </div>
+                    <Link 
+                        to="/upload"
+                        className="flex items-center gap-3 px-10 py-4 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl hover:-translate-y-1 active:scale-95 transition-all dark:bg-primary"
+                    >
+                        <span className="material-symbols-outlined text-[20px]">upload_file</span>
+                        Start New Audit
+                    </Link>
                 </div>
 
-                <Link 
-                    to="/upload"
-                    className="flex items-center gap-3 px-10 py-5 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-2xl hover:-translate-y-1 active:scale-95 transition-all dark:bg-primary"
-                >
-                    <span className="material-symbols-outlined text-[20px]">upload_file</span>
-                    Initialize New Audit
-                </Link>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="md:col-span-2 space-y-6">
+                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-on-surface-variant dark:text-slate-500 mb-4">Recent Platform Activity</h3>
+                        <div className="bg-white rounded-3xl ring-1 ring-outline-variant/10 shadow-sm overflow-hidden dark:bg-slate-900 dark:ring-slate-800">
+                             {recentActivites.length > 0 ? (
+                                 recentActivites.map((row, i) => (
+                                    <div 
+                                        key={i} 
+                                        onClick={() => navigate(`/dashboard?auditId=${row.id}`)}
+                                        className="flex items-center justify-between p-6 hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-50 last:border-0 dark:border-slate-800 dark:hover:bg-slate-800/50"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center dark:bg-slate-800">
+                                                <span className="material-symbols-outlined text-primary text-[20px]">history</span>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-black text-on-surface dark:text-white">{row.dataset}</p>
+                                                <p className="text-[9px] text-on-surface-variant uppercase tracking-tighter dark:text-slate-500 font-black">{row.date} • {row.model_type}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className={clsx(
+                                                "text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest",
+                                                row.status === 'PASS' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                                            )}>
+                                                {row.status}
+                                            </span>
+                                            <span className="material-symbols-outlined text-on-surface-variant text-sm opacity-20 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all">chevron_right</span>
+                                        </div>
+                                    </div>
+                                 ))
+                             ) : (
+                                 <div className="p-12 text-center text-on-surface-variant font-medium text-xs opacity-50 italic">
+                                     Protocol history is empty. Your first audit will appear here.
+                                 </div>
+                             )}
+                        </div>
+                    </div>
+                    
+                    <div className="md:col-span-1 space-y-6">
+                        <div className="p-8 rounded-3xl bg-slate-900 text-white relative overflow-hidden group shadow-2xl h-full flex flex-col justify-between min-h-[300px]">
+                            <div className="relative z-10">
+                                <span className="material-symbols-outlined text-primary text-4xl mb-4">clinical_notes</span>
+                                <h4 className="text-xl font-bold mb-2">Automated Compliance</h4>
+                                <p className="text-xs text-white/50 leading-relaxed font-medium">
+                                    FairLens provides intersectional bias detection grounded in EU AI Act and EEOC frameworks.
+                                </p>
+                            </div>
+                            <div className="relative z-10 pt-8 mt-auto">
+                                <Link to="/history" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-white transition-colors">
+                                    Open Ledger Archive <span className="material-symbols-outlined text-sm">north_east</span>
+                                </Link>
+                            </div>
+                            <span className="material-symbols-outlined absolute -right-6 -bottom-6 text-[180px] text-white/5 -rotate-12 group-hover:scale-110 group-hover:rotate-0 transition-transform duration-1000">verified</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -230,26 +296,22 @@ export const Dashboard = () => {
                     <div className="card-layer p-6 dark:bg-slate-900 border-outline-variant/10">
                         <h3 className="headline-small mb-4">Recent Audit Activity</h3>
                         <div className="space-y-4">
-                            <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center dark:bg-emerald-900/30">
-                                    <span className="material-symbols-outlined text-emerald-600 text-lg">check_circle</span>
+                            {recentActivites.length > 0 ? recentActivites.slice(0, 3).map((act, i) => (
+                                <div key={i} className="flex items-start gap-3">
+                                    <div className={`w-8 h-8 rounded-lg ${act.status === 'PASS' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-amber-100 dark:bg-amber-900/30'} flex items-center justify-center`}>
+                                        <span className={`material-symbols-outlined ${act.status === 'PASS' ? 'text-emerald-600' : 'text-amber-600'} text-lg`}>
+                                            {act.status === 'PASS' ? 'check_circle' : 'priority_high'}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <p className="text-[11px] font-bold text-on-surface dark:text-white">Audit {act.status}</p>
+                                        <p className="text-[10px] text-on-surface-variant dark:text-slate-400 uppercase tracking-tighter font-black">{act.dataset}</p>
+                                        <span className="text-[9px] text-slate-400 font-medium tracking-tighter">{act.date}</span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-[11px] font-bold text-on-surface dark:text-white">Audit Completed</p>
-                                    <p className="text-[10px] text-on-surface-variant dark:text-slate-400">UCI Adult Dataset processed successfully.</p>
-                                    <span className="text-[9px] text-slate-400 font-medium tracking-tighter">2m ago</span>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3 opacity-60">
-                                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-primary text-lg">science</span>
-                                </div>
-                                <div>
-                                    <p className="text-[11px] font-bold text-on-surface dark:text-white">Mitigation Simulated</p>
-                                    <p className="text-[10px] text-on-surface-variant dark:text-slate-400">Reweighing threshold adjusted to 0.85.</p>
-                                    <span className="text-[9px] text-slate-400 font-medium tracking-tighter">1h ago</span>
-                                </div>
-                            </div>
+                            )) : (
+                                <p className="text-[10px] text-on-surface-variant italic opacity-60">No recent activity found.</p>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import useAuthStore from '../store/useAuthStore';
 import { signOut } from '../services/authService';
 import { auditService } from '../services/auditService';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import clsx from 'clsx';
 import { auth } from '../config/firebase';
 import { updateProfile } from 'firebase/auth';
@@ -10,6 +10,9 @@ import { updateProfile } from 'firebase/auth';
 export const Settings = () => {
     const { user, theme, setTheme, setUser } = useAuthStore();
     const navigate = useNavigate();
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const activeTab = queryParams.get('tab'); // 'profile', 'notifications', or null for all
     
     const [notifications, setNotifications] = useState(true);
     const [auditAutoSave, setAuditAutoSave] = useState(true);
@@ -99,15 +102,20 @@ export const Settings = () => {
             ]
         },
         {
+            id: 'config',
             title: 'Platform Config',
             icon: 'settings_suggest',
             description: 'Global application monitoring and security',
             fields: [
-                { label: 'Email Notifications', value: notifications, type: 'toggle', onChange: () => setNotifications(!notifications) },
+                { label: 'Email Notifications', id: 'notifications-toggle', value: notifications, type: 'toggle', onChange: () => setNotifications(!notifications) },
                 { label: 'Interface Theme', value: theme.charAt(0).toUpperCase() + theme.slice(1), type: 'select', options: ['Light', 'Dark'], onChange: handleThemeChange }
             ]
         }
     ];
+
+    const filteredSections = activeTab 
+        ? sections.filter(s => s.title.toLowerCase().includes(activeTab.toLowerCase()))
+        : sections;
 
     return (
         <div className="flex flex-col gap-10 w-full animate-in fade-in py-10 pb-12 transition-colors duration-300">
@@ -182,7 +190,7 @@ export const Settings = () => {
                 </div>
 
                 <div className="lg:col-span-8 space-y-10">
-                    {sections.map((section, idx) => (
+                    {filteredSections.map((section, idx) => (
                         <div key={idx} className="space-y-6">
                             <div className="flex items-start gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-on-surface-variant dark:bg-slate-900 dark:text-slate-400">

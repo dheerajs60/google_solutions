@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUploadStore } from '../store/useUploadStore';
 import { useAuditStore } from '../store/useAuditStore';
 import { auditService } from '../services/auditService';
+import useAuthStore from '../store/useAuthStore';
 import clsx from 'clsx';
 
 export const AttributeSelection = () => {
@@ -32,7 +33,8 @@ export const AttributeSelection = () => {
         setIsSubmitting(true);
         setAuditError(null);
         try {
-            const results = await auditService.runAudit(file, targetColumn, sensitiveAttributes, positiveLabel);
+            const userId = useAuthStore.getState().user?.uid;
+            const results = await auditService.runAudit(file, sensitiveAttributes, targetColumn, positiveLabel, userId);
             // Ensure state is updated BEFORE navigation
             setAuditResults(results);
             setTimeout(() => navigate('/dashboard'), 100);
