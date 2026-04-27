@@ -7,12 +7,34 @@ from dotenv import load_dotenv
 load_dotenv()
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
 
+# 1. Project Configuration
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "solutions-89747")
-# Hardcoded to us-central1 because asia-south2 does not support gemini-1.5-flash
-LOCATION = "us-central1"
+LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
 
-vertexai.init(project=PROJECT_ID, location=LOCATION)
-model = GenerativeModel("gemini-1.5-flash")
+# 2. Credential Management
+def setup_credentials():
+    if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+        # Look for the service account key in common locations
+        possible_paths = [
+            "serviceAccountKey.json",
+            "backend/serviceAccountKey.json",
+            os.path.join(os.path.dirname(__file__), "../serviceAccountKey.json")
+        ]
+        for path in possible_paths:
+            if os.path.exists(path):
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.abspath(path)
+                print(f"Vertex AI: Using service account key at {path}")
+                break
+
+setup_credentials()
+
+# 3. Initialize Vertex AI
+try:
+    vertexai.init(project=PROJECT_ID, location=LOCATION)
+    model = GenerativeModel("gemini-1.5-flash")
+except Exception as e:
+    print(f"Critical: Failed to initialize Vertex AI: {e}")
+    model = None
 
 def generate_bias_explanation_stream(metrics: dict, sensitive_attrs: list[str]):
     """

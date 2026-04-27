@@ -18,9 +18,10 @@ def initialize_firebase():
         
         # Globally export it so BigQuery and everything else works seamlessly
         if cred_path and os.path.exists(cred_path):
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.abspath(cred_path)
-                
-        if cred_path and os.path.exists(cred_path):
+            abs_path = os.path.abspath(cred_path)
+            if os.getenv("GOOGLE_APPLICATION_CREDENTIALS") != abs_path:
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = abs_path
+                print(f"Firebase Admin: Exported GOOGLE_APPLICATION_CREDENTIALS from {cred_path}")
             cred = credentials.Certificate(cred_path)
             print(f"Loaded Firebase credentials from {cred_path}")
             firebase_admin.initialize_app(cred, {"storageBucket": bucket_name, "projectId": project_id})
