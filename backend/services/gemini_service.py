@@ -9,7 +9,7 @@ load_dotenv()
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "solutions-89747")
-LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION", "asia-south2")
+LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
 
 vertexai.init(project=PROJECT_ID, location=LOCATION)
 
