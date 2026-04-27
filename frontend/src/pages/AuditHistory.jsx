@@ -7,11 +7,15 @@ import clsx from 'clsx';
 export const AuditHistory = () => {
     const [history, setHistory] = useState([]);
     const navigate = useNavigate();
+    const user = useAuthStore(state => state.user);
 
     useEffect(() => {
-        const userId = useAuthStore.getState().user?.uid;
-        auditService.getHistory(userId).then(setHistory);
-    }, []);
+        if (user?.uid) {
+            auditService.getHistory(user.uid).then(setHistory);
+        } else {
+            setHistory([]);
+        }
+    }, [user?.uid]);
 
     return (
         <div className="flex flex-col gap-10 w-full animate-in fade-in py-10 pb-12">

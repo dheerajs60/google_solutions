@@ -1,19 +1,18 @@
 import os
-import vertexai
-from vertexai.generative_models import GenerativeModel, Part, FinishReason
-import vertexai.preview.generative_models as generative_models
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 # Load .env from root or current dir
 load_dotenv()
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
 
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "solutions-89747")
-LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION", "asia-south2")
-
-vertexai.init(project=PROJECT_ID, location=LOCATION)
-
-model = GenerativeModel("gemini-1.5-flash")
+api_key = os.getenv("GEMINI_API_KEY")
+if api_key:
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel("gemini-1.5-flash")
+else:
+    print("WARNING: GEMINI_API_KEY not found in environment.")
+    model = None
 
 def generate_bias_explanation_stream(metrics: dict, sensitive_attrs: list[str]):
     """
@@ -42,6 +41,17 @@ def generate_bias_explanation_stream(metrics: dict, sensitive_attrs: list[str]):
     AUDITOR'S REPORT:
     """
     
+    if not model:
+        yield "\n\n### [SIMULATED FORENSIC REPORT]\n\n"
+        yield "The AI service is missing its API Key. "
+        yield "While that is resolved, the FairLens heuristic engine has generated this forensic summary:\n\n"
+        simulated_analysis = generate_simulated_report(metrics)
+        for chunk in simulated_analysis.split(" "):
+            yield chunk + " "
+            import time
+            time.sleep(0.02) # Simulate streaming
+        return
+
     try:
         responses = model.generate_content(
             prompt,
@@ -53,19 +63,19 @@ def generate_bias_explanation_stream(metrics: dict, sensitive_attrs: list[str]):
                 yield response.text
     except Exception as e:
         error_msg = str(e)
-        print(f"Vertex AI API failure: {error_msg}")
+        print(f"GenAI API failure: {error_msg}")
         
-        # If it's a billing/auth error, provide a high-quality simulated forensic report
-        # so the user can continue their demo while Google Cloud syncs.
+        # If it's a quota or other error, fallback to simulated report
         yield "\n\n### [SIMULATED FORENSIC REPORT]\n\n"
-        yield "The Vertex AI service is currently initializing billing/permissions. "
-        yield "While that syncs, the FairLens heuristic engine has generated this forensic summary:\n\n"
+        yield "The generative AI service is currently unavailable or over quota. "
+        yield "While that synchronizes, the FairLens heuristic engine has generated this forensic summary:\n\n"
         
         simulated_analysis = generate_simulated_report(metrics)
         for chunk in simulated_analysis.split(" "):
             yield chunk + " "
             import time
             time.sleep(0.02) # Simulate streaming
+
 
 def generate_simulated_report(metrics: dict) -> str:
     # Heuristic based analysis
@@ -82,6 +92,9 @@ def generate_bias_explanation(metrics: dict, sensitive_attrs: list[str]) -> str:
     """
     Non-streaming version for backward compatibility.
     """
+    if not model:
+        return f"[SIMULATED] The AI service is missing an API Key. Parity metrics point to potential bias scaling for {sensitive_attrs}."
+        
     try:
         response = model.generate_content(
             f"Summarize bias in 100 words: {str(metrics)} for {sensitive_attrs}",
@@ -89,5 +102,5 @@ def generate_bias_explanation(metrics: dict, sensitive_attrs: list[str]) -> str:
         )
         return response.text.strip()
     except Exception as e:
-        print(f"Vertex AI Error: {e}")
+        print(f"GenAI Error: {e}")
         return "Analysis unavailable."
