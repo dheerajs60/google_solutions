@@ -52,8 +52,12 @@ def generate_bias_explanation_stream(metrics: dict, sensitive_attrs: list[str]):
             if response.text:
                 yield response.text
     except Exception as e:
-        print(f"Vertex AI (Gemini) Error: {e}")
-        yield f"Error generating auditor report: {str(e)}"
+        error_msg = str(e)
+        if "403" in error_msg and "aiplatform.googleapis.com" in error_msg:
+            yield "### Action Required: Enable Vertex AI API\n\nVertex AI API is currently disabled for this project. To see forensic AI reports, please authorize the service here: [Enable Vertex AI API](https://console.developers.google.com/apis/api/aiplatform.googleapis.com/overview?project=solutions-89747).\n\nOnce enabled, retry the analysis."
+        else:
+            print(f"Vertex AI (Gemini) Error: {e}")
+            yield f"Error generating auditor report: {error_msg}"
 
 def generate_bias_explanation(metrics: dict, sensitive_attrs: list[str]) -> str:
     """

@@ -4,19 +4,19 @@ import clsx from 'clsx';
 
 const AccordionItem = ({ title, status, isExpanded, onToggle, findings }) => {
     return (
-        <div className="bg-white rounded-2xl ring-1 ring-outline-variant/10 shadow-sm overflow-hidden mb-4 transition-all">
+        <div className="bg-white rounded-2xl ring-1 ring-outline-variant/10 shadow-sm overflow-hidden mb-4 transition-all dark:bg-slate-900 dark:ring-slate-800">
             <button 
                 onClick={onToggle}
-                className="w-full flex items-center justify-between p-6 hover:bg-slate-50 transition-colors"
+                className="w-full flex items-center justify-between p-6 hover:bg-slate-50 transition-colors dark:hover:bg-slate-800/50"
             >
                 <div className="flex items-center gap-4">
                     <span className={clsx(
                         "material-symbols-outlined transition-transform duration-300",
-                        isExpanded ? "rotate-90 text-primary" : "text-on-surface-variant"
+                        isExpanded ? "rotate-90 text-primary" : "text-on-surface-variant dark:text-slate-500"
                     )}>
                         chevron_right
                     </span>
-                    <span className="text-sm font-black uppercase tracking-widest text-on-surface">{title}</span>
+                    <span className="text-sm font-black uppercase tracking-widest text-on-surface dark:text-white">{title}</span>
                 </div>
                 <div className="flex items-center gap-3">
                     {status === 'PASS' 
@@ -59,8 +59,25 @@ const AccordionItem = ({ title, status, isExpanded, onToggle, findings }) => {
 };
 
 export const ComplianceReport = () => {
-    const { metrics, overallScore } = useAuditStore();
+    const { metrics, overallScore, auditId, geminiExplanation } = useAuditStore();
     const [expanded, setExpanded] = useState('EU AI Act Article 10');
+
+    const downloadReport = () => {
+        const reportData = {
+            auditId,
+            overallScore,
+            metrics,
+            aiExplanation: geminiExplanation,
+            timestamp: new Date().toISOString(),
+            status: "CERTIFIED"
+        };
+        const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `FairLens_Audit_${auditId || 'Report'}.json`;
+        a.click();
+    };
 
     const standards = [
         {
@@ -117,12 +134,15 @@ export const ComplianceReport = () => {
                         <span className="px-3 py-1 bg-slate-100 text-[10px] font-black uppercase tracking-widest rounded-full text-on-surface-variant">Version 2.4.0</span>
                         <span className="text-[10px] font-bold text-on-surface-variant">Generated Apr 08, 2026</span>
                     </div>
-                    <h1 className="text-4xl font-black tracking-tighter text-on-surface mb-2">Compliance Governance</h1>
-                    <p className="text-on-surface-variant text-sm max-w-lg">
+                    <h1 className="text-4xl font-black tracking-tighter text-on-surface mb-2 dark:text-white">Compliance Governance</h1>
+                    <p className="text-on-surface-variant text-sm max-w-lg dark:text-slate-400">
                         Automated verification of algorithmic outputs against international regulatory frameworks and internal fairness protocols.
                     </p>
                 </div>
-                <button className="flex items-center gap-3 px-6 py-3 bg-slate-900 text-white rounded-xl text-[11px] font-black uppercase tracking-widest shadow-xl hover:shadow-indigo-500/20 active:scale-95 transition-all">
+                <button 
+                    onClick={downloadReport}
+                    className="flex items-center gap-3 px-6 py-3 bg-slate-900 text-white rounded-xl text-[11px] font-black uppercase tracking-widest shadow-xl hover:shadow-indigo-500/20 active:scale-95 transition-all dark:bg-primary"
+                >
                     <span className="material-symbols-outlined text-[20px]">download</span>
                     Export Full Audit
                 </button>

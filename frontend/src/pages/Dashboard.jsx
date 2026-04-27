@@ -187,8 +187,8 @@ export const Dashboard = () => {
                                     {isAIAnalysing && <span className="inline-block w-1.5 h-4 ml-1 bg-primary animate-pulse"></span>}
                                 </p>
                                 <div className="flex items-center gap-4 mt-6">
-                                    <Link to="/heatmap" className="inline-flex items-center text-primary font-bold text-xs hover:underline">
-                                        View full analysis
+                                    <Link to="/report" className="inline-flex items-center text-primary font-bold text-xs hover:underline">
+                                        Generate Compliance Report
                                         <span className="material-symbols-outlined text-sm ml-1">arrow_forward</span>
                                     </Link>
                                 </div>
@@ -222,9 +222,36 @@ export const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Bias Lineage */}
-                <div className="lg:col-span-1">
+                {/* Right Side: Bias Lineage & Activity */}
+                <div className="lg:col-span-1 space-y-8">
                     <BiasLineage stages={lineage} />
+                    
+                    {/* Activity Feed */}
+                    <div className="card-layer p-6 dark:bg-slate-900 border-outline-variant/10">
+                        <h3 className="headline-small mb-4">Recent Audit Activity</h3>
+                        <div className="space-y-4">
+                            <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center dark:bg-emerald-900/30">
+                                    <span className="material-symbols-outlined text-emerald-600 text-lg">check_circle</span>
+                                </div>
+                                <div>
+                                    <p className="text-[11px] font-bold text-on-surface dark:text-white">Audit Completed</p>
+                                    <p className="text-[10px] text-on-surface-variant dark:text-slate-400">UCI Adult Dataset processed successfully.</p>
+                                    <span className="text-[9px] text-slate-400 font-medium tracking-tighter">2m ago</span>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3 opacity-60">
+                                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-primary text-lg">science</span>
+                                </div>
+                                <div>
+                                    <p className="text-[11px] font-bold text-on-surface dark:text-white">Mitigation Simulated</p>
+                                    <p className="text-[10px] text-on-surface-variant dark:text-slate-400">Reweighing threshold adjusted to 0.85.</p>
+                                    <span className="text-[9px] text-slate-400 font-medium tracking-tighter">1h ago</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

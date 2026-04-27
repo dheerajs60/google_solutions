@@ -141,16 +141,22 @@ export const Upload = () => {
                 {/* Footer Actions */}
                 <div className="flex justify-between items-center pt-6 border-t border-outline-variant/10">
                     <button 
-                        onClick={loadSampleData}
+                        onClick={() => navigate('/dashboard')}
                         className="text-xs font-black text-on-surface-variant uppercase tracking-widest hover:text-on-surface transition-colors"
                     >
-                        Sample Dataset
+                        Go Back
                     </button>
-                    <div className="flex gap-4">
+                    <div className="flex items-center gap-6">
+                        <button 
+                            onClick={loadSampleData}
+                            className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline"
+                        >
+                            Use Sample Dataset
+                        </button>
                         <button 
                             disabled={!preview}
                             onClick={() => navigate('/attribute-selection')}
-                            className="bg-slate-900 text-white px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg hover:shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-50"
+                            className="bg-slate-900 text-white px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg hover:shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-50 dark:bg-primary"
                         >
                             Next: Define Attributes
                         </button>

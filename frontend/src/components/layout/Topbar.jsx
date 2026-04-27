@@ -1,9 +1,11 @@
 import React from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useUploadStore } from '../../store/useUploadStore';
+import useAuthStore from '../../store/useAuthStore';
 
 export const Topbar = () => {
     const { file } = useUploadStore();
+    const { user } = useAuthStore();
     const location = useLocation();
     const navigate = useNavigate();
     
@@ -16,7 +18,7 @@ export const Topbar = () => {
                 {!isFocusedFlow ? (
                     <>
                         <div className="flex items-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 space-x-2 dark:text-slate-500">
-                             <Link to="/" className="hover:text-slate-900 transition-colors dark:hover:text-white">FairLens</Link>
+                             <Link to="/dashboard" className="hover:text-slate-900 transition-colors dark:hover:text-white">FairLens</Link>
                              <span className="text-slate-200 dark:text-slate-700">/</span>
                              <span className="text-slate-900 dark:text-slate-200"> {location.pathname.split('/').pop() || 'Dashboard'}</span>
                         </div>
@@ -24,12 +26,17 @@ export const Topbar = () => {
                         <div className="flex items-center bg-surface-container-high px-3 py-1.5 rounded-full space-x-2 dark:bg-slate-800">
                             <span className="material-symbols-outlined text-[16px] dark:text-primary">database</span>
                             <span className="text-[11px] font-bold tracking-tight text-on-surface-variant truncate max-w-[200px] dark:text-slate-300">
-                                {file ? file.name : "No Dataset"}
+                                {file ? file.name : "System Sandbox"}
                             </span>
                         </div>
                     </>
                 ) : (
-                    <div className="text-2xl font-bold tracking-tighter text-indigo-700 dark:text-primary">FairLens</div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
+                             <span className="material-symbols-outlined text-white text-sm">troubleshoot</span>
+                        </div>
+                        <div className="text-xl font-bold tracking-tighter text-slate-900 dark:text-white">FairLens</div>
+                    </div>
                 )}
             </div>
             
@@ -44,11 +51,21 @@ export const Topbar = () => {
                 )}
                 
                 <div className="flex items-center space-x-4">
-                    <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors dark:text-slate-400 dark:hover:text-primary">notifications</span>
-                    <div className="flex items-center space-x-2">
-                        <span className="text-xs font-semibold text-on-surface-variant hidden md:block dark:text-slate-400">Setup Wizard</span>
-                        <div className="h-8 w-8 rounded-full overflow-hidden border border-outline-variant/30 flex items-center justify-center bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700">
-                            <span className="material-symbols-outlined text-on-surface-variant text-[20px] dark:text-slate-400">person</span>
+                    <div className="relative group cursor-pointer" onClick={() => navigate('/settings')}>
+                        <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors dark:text-slate-400 dark:group-hover:text-primary">notifications</span>
+                        <span className="absolute top-0 right-0 w-2 h-2 bg-error rounded-full border-2 border-white dark:border-slate-900"></span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 cursor-pointer group" onClick={() => navigate('/settings')}>
+                        <span className="text-xs font-semibold text-on-surface-variant hidden md:block dark:text-slate-400 group-hover:text-primary transition-colors">
+                            {user?.displayName || user?.email?.split('@')[0] || "Forensic Agent"}
+                        </span>
+                        <div className="h-8 w-8 rounded-full overflow-hidden border border-outline-variant/30 flex items-center justify-center bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 group-hover:border-primary transition-colors">
+                            {user?.photoURL ? (
+                                <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="material-symbols-outlined text-on-surface-variant text-[20px] dark:text-slate-400">person</span>
+                            )}
                         </div>
                     </div>
                 </div>
