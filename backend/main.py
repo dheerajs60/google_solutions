@@ -4,23 +4,26 @@ try:
     from fastapi.staticfiles import StaticFiles
     from fastapi.responses import FileResponse
     import os
+    
+    # Initialize app first to ensure it starts
+    app = FastAPI(title="FairLens API", version="2.2.2")
+
+    # Lazy/Resilient initialization
+    try:
+        import backend.config.firebase_admin
+        from backend.config.bigquery_client import initialize_bigquery
+        initialize_bigquery()
+        print("Backend services initialized successfully.")
+    except Exception as e:
+        print(f"!!! NON-BLOCKING STARTUP ERROR: {e}")
+        # We don't raise here, so the app (and frontend) can still serve
+        
     from backend.routers import audit, mitigation
-    
-    # Initialize firebase admin
-    import backend.config.firebase_admin
-    from backend.config.bigquery_client import initialize_bigquery
-    
-    # Ensure BigQuery schema exists
-    initialize_bigquery()
-    
     from backend.middleware.auth_middleware import FirebaseAuthMiddleware
-    
-    # FairLens Engine v2.2.1 - Automated Stabilization
-    app = FastAPI(title="FairLens API", version="2.2.1")
 except Exception as e:
-    print(f"!!! CRITICAL STARTUP ERROR: {e}")
+    print(f"!!! CRITICAL STARTUP ERROR (UNRECOVERABLE): {e}")
     import traceback
-    print(traceback.format_exc())
+    traceback.print_exc()
     raise e
 
 try:
