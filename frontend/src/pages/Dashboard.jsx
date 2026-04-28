@@ -385,6 +385,11 @@ export const Dashboard = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Version Footer for Verification */}
+            <div className="mt-12 pt-8 border-t border-slate-100 dark:border-slate-800 opacity-20">
+                <p className="text-[10px] text-center font-bold uppercase tracking-widest">FairLens Engine v2.2.0 - Stabilized Architecture</p>
+            </div>
         </div>
     );
 };
