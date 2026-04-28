@@ -16,7 +16,11 @@ def run_mitigation(audit_id: str, reweighing_strength: float, threshold_adjust: 
     if not stored:
         raise ValueError("Audit ID not found or expired.")
         
-    base_model = stored["model"]
+    # Check for presence of training data objects (only available in-memory)
+    required_keys = ["model", "X_train", "y_train", "X_test", "y_test", "sensitive_train", "sensitive_test"]
+    if not all(k in stored for k in required_keys):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=412, detail="Mitigation requires the original dataset to be in memory. Please re-run the audit on this instance.")
     X_train = stored["X_train"]
     y_train = stored["y_train"]
     X_test = stored["X_test"]

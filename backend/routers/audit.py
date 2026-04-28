@@ -1,6 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from fastapi.responses import StreamingResponse
-from typing import List, Dict, Any
+from fastapi.responses import StreamingResponse, FileResponse
 import pandas as pd
 import io
 import uuid
@@ -34,6 +33,40 @@ async def get_audit_analysis(audit_id: str):
     update_audit_results(audit_id, results)
     
     return {"explanation": explanation}
+
+@router.get("/{audit_id}/export")
+async def export_audit(audit_id: str):
+    audit_data = get_audit(audit_id)
+    if not audit_data:
+        raise HTTPException(status_code=404, detail="Audit not found")
+    
+    results = audit_data.get("results")
+    metrics = results.get("metrics", {})
+    
+    # Flatten metrics for CSV
+    data = []
+    for key, m in metrics.items():
+        data.append({
+            "Metric": m.get("description", key),
+            "Value": m.get("value"),
+            "Status": m.get("status")
+        })
+    
+    df = pd.DataFrame(data)
+    
+    # Add summary info
+    df.loc[len(df)] = ["Overall Fairness Score", results.get("overall_score"), "N/A"]
+    df.loc[len(df)] = ["Audit Timestamp", datetime.datetime.now().isoformat(), "N/A"]
+    
+    output = io.BytesIO()
+    df.to_csv(output, index=False)
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=FairLens_Audit_{audit_id}.csv"}
+    )
 
 @router.get("/{audit_id}/analysis/stream")
 async def stream_audit_analysis(audit_id: str):

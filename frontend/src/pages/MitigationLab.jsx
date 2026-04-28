@@ -25,8 +25,22 @@ export const MitigationLab = () => {
         try {
             const result = await auditService.runMitigation(auditId, reweighingStrength, thresholdAdjust, applyPostProcessing);
             setMitigationState({ mitigationResult: result });
+            
+            // Add a successful lineage entry
+            setMitigationState({
+                lineage: [
+                    ...(useAuditStore.getState().lineage || []),
+                    { stage: "Mitigation Simulated", status: "PASS", description: `Applied ${applyPostProcessing ? 'Auto-Correct' : 'Manual Tuning'}` }
+                ]
+            });
         } catch (error) {
             console.error("Mitigation simulation failed", error);
+            if (error.response?.status === 412) {
+                alert("Cloud Session Expired: Your dataset is no longer in active memory. Please go back to the Dashboard and re-run your audit to enable mitigation.");
+                navigate('/dashboard');
+            } else {
+                alert("Mitigation failed: " + (error.response?.data?.detail || "Unknown error"));
+            }
         } finally {
             setIsSimulating(false);
         }
@@ -108,7 +122,7 @@ export const MitigationLab = () => {
                                     />
                                     <div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                                 </div>
-                                <span className="text-xs font-bold text-on-surface">Auto-Correct (Aggressive)</span>
+                                <span className={clsx("text-xs font-bold", applyPostProcessing ? "text-primary" : "text-on-surface")}>Auto-Correct (Aggressive)</span>
                             </div>
 
                             <button 

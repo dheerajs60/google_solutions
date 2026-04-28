@@ -107,24 +107,20 @@ def get_history(user_id: str = None) -> List[Dict[str, Any]]:
             query = db.collection("audit_history")
             
             if user_id:
-                # 1. Get user's specific audits
+                # Strictly return only this user's audits
                 user_docs = query.where("user_id", "==", user_id).stream()
                 history = [doc.to_dict() for doc in user_docs]
                 
-                # 2. ALSO include legacy audits (user_id is None/null) if they aren't already included
-                legacy_docs = query.where("user_id", "==", None).stream()
-                for doc in legacy_docs:
-                    data = doc.to_dict()
-                    if data.get("id") not in [h.get("id") for h in history]:
-                        history.append(data)
+                # Ensure all IDs are strings and sorting by timestamp
+                for item in history:
+                    if "id" not in item:
+                        item["id"] = "legacy"
                 
-                # Sort in-memory: newer dates first
                 history.sort(key=lambda x: x.get("date", ""), reverse=True)
                 history = history[:50]
             else:
-                # No user_id filter, we can use native ordering on a single field
-                docs = query.order_by("date", direction=firestore.Query.DESCENDING).limit(50).stream()
-                history = [doc.to_dict() for doc in docs]
+                # If no user_id (not logged in), return nothing to ensure privacy over platform history
+                history = []
                 
         except Exception as e:
             print(f"!!! Firestore Read Error: {e}")
