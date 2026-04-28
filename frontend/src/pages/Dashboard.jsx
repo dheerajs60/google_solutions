@@ -358,7 +358,7 @@ export const Dashboard = () => {
                 </div>
 
                 {/* Right Side: Bias Lineage & Activity */}
-                <div className="lg:col-span-1 space-y-8">
+                <div className="lg:col-span-1 space-y-8 sticky top-24 self-start">
                     <BiasLineage stages={lineage} />
                     
                     {/* Activity Feed */}
