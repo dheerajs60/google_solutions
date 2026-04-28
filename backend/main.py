@@ -10,12 +10,18 @@ try:
     import backend.config.firebase_admin
     from backend.config.bigquery_client import initialize_bigquery
     
-    # Ensure BigQuery schema exists
-    initialize_bigquery()
-    
     from backend.middleware.auth_middleware import FirebaseAuthMiddleware
     
     app = FastAPI(title="FairLens API", version="1.0.0")
+
+    @app.on_event("startup")
+    async def startup_event():
+        # Ensure BigQuery schema exists in the background so we don't timeout on Cloud Run
+        print("Startup: Initializing BigQuery schema...")
+        try:
+            initialize_bigquery()
+        except Exception as e:
+            print(f"Warning: Background BigQuery initialization failed: {e}")
 except Exception as e:
     print(f"!!! CRITICAL STARTUP ERROR: {e}")
     import traceback

@@ -62,10 +62,5 @@ bq_client = get_bigquery_client()
 # Call on module load, but ALSO allow explicit calls
 if __name__ == "__main__":
     initialize_bigquery()
-else:
-    # We still try to ensure on import, but we'll call it again in main.py for robustness
-    try:
-        if bq_client:
-            ensure_bigquery_schema(bq_client, project_id)
-    except Exception as e:
-        print(f"Warning: BigQuery initialization on import failed: {e}")
+# On-import initialization is removed to prevent blocking Cloud Run startup.
+# main.py now handles this in a non-blocking @app.on_event("startup") task.
