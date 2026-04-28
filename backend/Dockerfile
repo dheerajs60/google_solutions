@@ -27,15 +27,8 @@ RUN if [ -f backend/requirements.txt ]; then \
 
 # Hyper-resilience: If we are in the 'backend' context, we need a 'backend' directory
 # so that imports like 'from backend.routers' work.
-RUN if [ ! -d backend ]; then \
-        echo "Reconstructing 'backend' package structure..." && \
-        mkdir /tmp/app_content && \
-        cp -r . /tmp/app_content && \
-        rm -rf * && \
-        mkdir backend && \
-        mv /tmp/app_content/* backend/ && \
-        touch backend/__init__.py; \
-    fi
+# Verify structure
+RUN ls -R .
 
 # Expose port
 EXPOSE 8080
