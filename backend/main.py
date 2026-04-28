@@ -43,6 +43,49 @@ app.include_router(mitigation.router, prefix="/audit", tags=["Mitigation"])
 def health_check():
     return {"status": "ok"}
 
+@app.get("/health/bigquery")
+async def check_bigquery():
+    from backend.config.bigquery_client import bq_client, project_id
+    from google.api_core.exceptions import NotFound
+    
+    if not bq_client:
+        return {"status": "error", "message": "BigQuery client not initialized"}
+    
+    try:
+        dataset_id = "fair_audit"
+        table_id = "audits"
+        dataset_ref = f"{project_id}.{dataset_id}"
+        table_ref = f"{dataset_ref}.{table_id}"
+        
+        # Check dataset
+        try:
+            client_dataset = bq_client.get_dataset(dataset_ref)
+            dataset_exists = True
+        except NotFound:
+            dataset_exists = False
+            
+        # Check table
+        table_exists = False
+        row_count = 0
+        if dataset_exists:
+            try:
+                table = bq_client.get_table(table_ref)
+                table_exists = True
+                row_count = table.num_rows
+            except NotFound:
+                table_exists = False
+        
+        return {
+            "status": "ok",
+            "project_id": project_id,
+            "dataset_exists": dataset_exists,
+            "table_exists": table_exists,
+            "row_count": row_count,
+            "dataset_location": client_dataset.location if dataset_exists else None
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 # Serve Frontend static files
 frontend_path = os.path.join(os.getcwd(), "frontend/dist")
 # If we are in the 'backend' container, dist might be in /app/frontend/dist 
