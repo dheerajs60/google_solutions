@@ -42,11 +42,30 @@ def ensure_bigquery_schema(client: bigquery.Client, project_id: str, dataset_id:
         client.create_table(table, timeout=30)
         print(f"Created table {table_ref}")
 
-project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "solutions-89747")
+def initialize_bigquery():
+    """Explicitly initializes the BigQuery schema."""
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "hackathon-481806")
+    client = get_bigquery_client()
+    if not client:
+        print("!!! BigQuery Error: Client could not be initialized.")
+        return
+    
+    try:
+        ensure_bigquery_schema(client, project_id)
+        print(f"BigQuery: Schema ensured for project {project_id}")
+    except Exception as e:
+        print(f"!!! BigQuery Schema Error: {e}")
+
+project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "hackathon-481806")
 bq_client = get_bigquery_client()
 
-# Ensure schema is created on startup
-try:
-    ensure_bigquery_schema(bq_client, project_id)
-except Exception as e:
-    print(f"Warning: BigQuery initialization failed: {e}")
+# Call on module load, but ALSO allow explicit calls
+if __name__ == "__main__":
+    initialize_bigquery()
+else:
+    # We still try to ensure on import, but we'll call it again in main.py for robustness
+    try:
+        if bq_client:
+            ensure_bigquery_schema(bq_client, project_id)
+    except Exception as e:
+        print(f"Warning: BigQuery initialization on import failed: {e}")

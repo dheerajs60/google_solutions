@@ -6,8 +6,8 @@ def initialize_firebase():
     if not firebase_admin._apps:
         # Check standard GOOGLE_APPLICATION_CREDENTIALS
         cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-        bucket_name = os.getenv("FIREBASE_STORAGE_BUCKET", "solutions-89747.firebasestorage.app")
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "solutions-89747")
+        bucket_name = os.getenv("FIREBASE_STORAGE_BUCKET", "hackathon-481806.firebasestorage.app")
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "hackathon-481806")
         
         # Check standard GOOGLE_APPLICATION_CREDENTIALS first, then fallback to local file
         if not cred_path or not os.path.exists(cred_path):

@@ -8,6 +8,10 @@ try:
     
     # Initialize firebase admin
     import backend.config.firebase_admin
+    from backend.config.bigquery_client import initialize_bigquery
+    
+    # Ensure BigQuery schema exists
+    initialize_bigquery()
     
     from backend.middleware.auth_middleware import FirebaseAuthMiddleware
     

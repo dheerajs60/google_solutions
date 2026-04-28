@@ -56,11 +56,13 @@ def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = N
             
             errors = bq_client.insert_rows_json(table_ref, rows_to_insert)
             if errors:
-                print(f"BigQuery insertion errors: {errors}")
+                print(f"!!! BigQuery Insertion Error: {errors}")
+            else:
+                print(f"BigQuery: Successfully saved audit {audit_id} to {table_ref}")
         except Exception as e:
-            print(f"BigQuery save error: {e}")
+            print(f"!!! BigQuery Save Exception for audit {audit_id}: {e}")
     else:
-        print("Warning: BigQuery client not configured, skipping data save.")
+        print("Warning: BigQuery client not initialized, skipping data save.")
 
 def update_audit_results(audit_id: str, results: Dict[str, Any]):
     if audit_id in ACTIVE_AUDITS:
@@ -94,12 +96,25 @@ def get_history(user_id: str = None) -> List[Dict[str, Any]]:
     # 1. Try Firestore first
     if db:
         try:
+            # Normalize user_id to avoid "undefined" strings from frontend
+            if user_id == "undefined":
+                user_id = None
+                
             query = db.collection("audit_history")
+            
             if user_id:
-                query = query.where("user_id", "==", user_id)
-            docs = query.order_by("date", direction=firestore.Query.DESCENDING).limit(50).stream()
-            for doc in docs:
-                history.append(doc.to_dict())
+                # IMPORTANT: Filtering by user_id AND ordering by date requires a composite index.
+                # To avoid requiring the user to create indexes, we filter here and sort in Python.
+                docs = query.where("user_id", "==", user_id).stream()
+                history = [doc.to_dict() for doc in docs]
+                # Sort in-memory: newer dates first
+                history.sort(key=lambda x: x.get("date", ""), reverse=True)
+                history = history[:50]
+            else:
+                # No user_id filter, we can use native ordering on a single field
+                docs = query.order_by("date", direction=firestore.Query.DESCENDING).limit(50).stream()
+                history = [doc.to_dict() for doc in docs]
+                
         except Exception as e:
             print(f"Firestore read error: {e}")
 
