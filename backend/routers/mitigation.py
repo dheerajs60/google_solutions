@@ -7,6 +7,7 @@ router = APIRouter()
 
 @router.post("/mitigate", response_model=MitigationResponse)
 async def mitigate_bias(request: MitigationRequest):
+    print(f"Mitigation Triggered: Audit={request.audit_id}, Reweighing={request.reweighing_strength}, Post={request.apply_postprocessing}")
     try:
         result = run_mitigation(
             request.audit_id, 
@@ -18,4 +19,6 @@ async def mitigate_bias(request: MitigationRequest):
         update_mitigation_results(request.audit_id, result.dict())
         return result
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))

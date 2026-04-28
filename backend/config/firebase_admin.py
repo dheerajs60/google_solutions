@@ -7,8 +7,14 @@ def initialize_firebase():
         # Check standard GOOGLE_APPLICATION_CREDENTIALS
         cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
         bucket_name = os.getenv("FIREBASE_STORAGE_BUCKET", "solutions-89747.firebasestorage.app")
-        # Ensure Firebase ALWAYS uses the solutions project, even if GOOGLE_CLOUD_PROJECT is set to Hackathon
-        firebase_project_id = os.getenv("FIREBASE_PROJECT_ID", "solutions-89747")
+# Ensure Firebase ALWAYS uses the solutions project, even if GOOGLE_CLOUD_PROJECT is set to Hackathon
+firebase_project_id = os.getenv("FIREBASE_PROJECT_ID", "solutions-89747")
+
+def initialize_firebase():
+    if not firebase_admin._apps:
+        # Check standard GOOGLE_APPLICATION_CREDENTIALS
+        cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        bucket_name = os.getenv("FIREBASE_STORAGE_BUCKET", f"{firebase_project_id}.firebasestorage.app")
         
         # Check standard GOOGLE_APPLICATION_CREDENTIALS first, then fallback to local file
         if not cred_path or not os.path.exists(cred_path):
@@ -36,16 +42,17 @@ def initialize_firebase():
     # Configure 24 hour lifecycle deletion rule
     try:
         bucket = storage.bucket()
-        rules = list(bucket.lifecycle_rules)
-        has_rule = any(
-            r.get("action", {}).get("type") == "Delete" and r.get("condition", {}).get("age") == 1
-            for r in rules
-        )
-        if not has_rule:
-            bucket.add_lifecycle_delete_rule(age=1)
-            bucket.patch()
+        if bucket.exists():
+            rules = list(bucket.lifecycle_rules)
+            has_rule = any(
+                r.get("action", {}).get("type") == "Delete" and r.get("condition", {}).get("age") == 1
+                for r in rules
+            )
+            if not has_rule:
+                bucket.add_lifecycle_delete_rule(age=1)
+                bucket.patch()
     except Exception as e:
-        print(f"Warning: Could not configure bucket lifecycle rule: {e}")
+        print(f"Warning: Could not configure bucket lifecycle rule (maybe bucket doesn't exist): {e}")
 
     # Safely get firestore client
     try:

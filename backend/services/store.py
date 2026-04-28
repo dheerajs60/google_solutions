@@ -11,7 +11,15 @@ from backend.config.bigquery_client import bq_client, project_id
 ACTIVE_AUDITS: Dict[str, Dict[str, Any]] = {}
 
 def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = None, user_id: str = None):
-    ACTIVE_AUDITS[audit_id] = {**data, "results": results, "user_id": user_id}
+    # Ensure we merge with existing in-memory state to preserve non-serializable objects (models)
+    if audit_id in ACTIVE_AUDITS:
+        ACTIVE_AUDITS[audit_id].update(data)
+        if results:
+            ACTIVE_AUDITS[audit_id]["results"] = results
+        if user_id:
+            ACTIVE_AUDITS[audit_id]["user_id"] = user_id
+    else:
+        ACTIVE_AUDITS[audit_id] = {**data, "results": results, "user_id": user_id}
     
     overall_score = results.get("overall_score", 0.0) if results else 0.0
     status = "PASS" if overall_score > 0.9 else "WARNING" if overall_score > 0.8 else "FAIL"
@@ -22,7 +30,7 @@ def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = N
 
     # High-resilience storage block
     try:
-        # Store lightweight metadata in Firestore
+        # Store lightweight metadata in Firestore (SOLUTIONS Project)
         if db:
             print(f"Firestore Diagnostics: Attempting to save to project '{db.project}'")
             doc_ref = db.collection("audit_history").document(audit_id)
@@ -39,7 +47,7 @@ def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = N
         else:
             print("!!! Firestore CRITICAL: Database client is NONE.")
 
-        # Store full details in BigQuery
+        # Store full details in BigQuery (HACKATHON Project)
         if bq_client:
             serializable_data = {
                 k: v for k, v in data.items() 
@@ -53,7 +61,7 @@ def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = N
             if errors:
                 print(f"!!! BigQuery Insertion Error: {errors}")
             else:
-                print(f"BigQuery: Successfully saved audit {audit_id}")
+                print(f"BigQuery: Successfully saved audit {audit_id} in project {project_id}")
     except Exception as e:
         print(f"!!! GLOBAL PERSISTENCE FAILURE for audit {audit_id}: {e}")
         import traceback
@@ -88,13 +96,13 @@ def update_mitigation_results(audit_id: str, mitigation_res: Dict[str, Any]):
 def get_history(user_id: str = None) -> List[Dict[str, Any]]:
     history = []
     
-    # 1. Try Firestore first
+    # Normalize user_id
+    if user_id in ["undefined", "null", ""]:
+        user_id = None
+                
+    # 1. Try Firestore first (SOLUTIONS Project)
     if db:
         try:
-            # Normalize user_id to avoid "undefined" strings from frontend
-            if user_id == "undefined":
-                user_id = None
-                
             query = db.collection("audit_history")
             
             if user_id:
@@ -115,7 +123,7 @@ def get_history(user_id: str = None) -> List[Dict[str, Any]]:
         
     print(f"History: Found {len(history)} records in Firestore for local user_id: {user_id}")
 
-    # 2. If nothing in Firestore, fallback to BigQuery
+    # 2. If nothing in Firestore, fallback to BigQuery (HACKATHON Project)
     if not history and bq_client:
         try:
             query = f"SELECT audit_id, full_details FROM `{project_id}.fair_audit.audits`"
@@ -140,9 +148,14 @@ def get_history(user_id: str = None) -> List[Dict[str, Any]]:
         except Exception as e:
             print(f"BigQuery history read error: {e}")
 
-    # 3. Final fallback: local in-memory audits
+    # 3. Final fallback: local in-memory audits (Filtered by user_id!)
     if not history:
         for key, value in ACTIVE_AUDITS.items():
+            # Apply user filtering to in-memory fallback
+            record_user_id = value.get("user_id")
+            if user_id and record_user_id != user_id:
+                continue
+                
             overall_score = value.get("results", {}).get("overall_score", 0.0)
             status = "PASS" if overall_score > 0.9 else "WARNING" if overall_score > 0.8 else "FAIL"
             history.append({

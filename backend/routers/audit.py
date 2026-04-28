@@ -58,23 +58,6 @@ async def update_settings(user_id: str, settings: Dict[str, Any]):
     save_user_settings(user_id, settings)
     return {"status": "success"}
 
-@router.post("/mitigate", response_model=MitigationResponse)
-async def mitigate_bias(request: MitigationRequest):
-    print(f"Mitigation Triggered: Audit={request.audit_id}, Reweighing={request.reweighing_strength}, Post={request.apply_postprocessing}")
-    try:
-        return run_mitigation(
-            request.audit_id, 
-            request.reweighing_strength, 
-            request.threshold_adjust, 
-            request.apply_postprocessing
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
-
 @router.get("/history")
 async def get_history(user_id: str = None):
     return store_get_history(user_id)

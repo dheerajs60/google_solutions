@@ -5,8 +5,7 @@ from google.api_core.exceptions import NotFound
 def get_bigquery_client():
     """Initializes and returns a BigQuery client using explicit project ID."""
     try:
-        from backend.config.firebase_admin import firebase_project_id
-        # Try to use the same project as Firebase if it matches, otherwise use default
+        # Use hackathon project for BigQuery
         current_project = os.getenv("GOOGLE_CLOUD_PROJECT", "hackathon-481806")
         return bigquery.Client(project=current_project)
     except Exception as e:
