@@ -32,7 +32,11 @@ def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = N
                 "date": timestamp,
                 "model_type": model_type,
                 "overall_score": overall_score,
-                "status": status
+                "status": status,
+                "results": results, # SAVE FULL RESULTS HERE FOR PERSISTENCE ON REFRESH
+                "sensitive_attrs": data.get("sensitive_attrs", []),
+                "target_column": data.get("target_column", ""),
+                "positive_label": data.get("positive_label", "")
             })
             print(f"Firestore: Successfully saved metadata for audit {audit_id}")
         except Exception as e:
@@ -168,7 +172,22 @@ def get_history(user_id: str = None) -> List[Dict[str, Any]]:
             
     return history
 
-def get_audit(audit_id: str) -> Dict[str, Any]:
+    # 1. Try Memory First (Fastest, contains non-serializable model/df)
+    if audit_id in ACTIVE_AUDITS:
+        return ACTIVE_AUDITS[audit_id]
+
+    # 2. Try Firestore (Contains full serializable results)
+    if db:
+        try:
+            doc = db.collection("audit_history").document(audit_id).get()
+            if doc.exists:
+                data = doc.to_dict()
+                print(f"Firestore: Retrieved full audit results for {audit_id}")
+                return data
+        except Exception as e:
+            print(f"Firestore Read Error: {e}")
+
+    # 3. Try BigQuery (Legacy/Backup)
     if bq_client:
         try:
             query = f"""
@@ -187,7 +206,7 @@ def get_audit(audit_id: str) -> Dict[str, Any]:
         except Exception as e:
             print(f"BigQuery read error: {e}")
         
-    return ACTIVE_AUDITS.get(audit_id)
+    return None
 
 def get_audit_results(audit_id: str) -> Dict[str, Any]:
     audit = get_audit(audit_id)
