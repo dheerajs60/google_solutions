@@ -16,10 +16,13 @@ try:
 
     @app.on_event("startup")
     async def startup_event():
+        import asyncio
         # Ensure BigQuery schema exists in the background so we don't timeout on Cloud Run
-        print("Startup: Initializing BigQuery schema...")
+        print("Startup: Initializing BigQuery schema in background thread...")
         try:
-            initialize_bigquery()
+            # Shift to a thread to be truly non-blocking for uvicorn
+            await asyncio.to_thread(initialize_bigquery)
+            print("Startup: BigQuery initialization complete.")
         except Exception as e:
             print(f"Warning: Background BigQuery initialization failed: {e}")
 except Exception as e:

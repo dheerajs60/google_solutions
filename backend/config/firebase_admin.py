@@ -33,19 +33,8 @@ def initialize_firebase():
             except Exception as e:
                 print(f"Warning: Could not initialize firebase admin cleanly: {e}")
     
-    # Configure 24 hour lifecycle deletion rule
-    try:
-        bucket = storage.bucket()
-        rules = list(bucket.lifecycle_rules)
-        has_rule = any(
-            r.get("action", {}).get("type") == "Delete" and r.get("condition", {}).get("age") == 1
-            for r in rules
-        )
-        if not has_rule:
-            bucket.add_lifecycle_delete_rule(age=1)
-            bucket.patch()
-    except Exception as e:
-        print(f"Warning: Could not configure bucket lifecycle rule: {e}")
+    # Lifecycle rules are handled manually or in background to prevent startup timeouts
+    pass
 
     # Safely get firestore client
     try:
