@@ -5,7 +5,7 @@ import pandas as pd
 import io
 import uuid
 import datetime
-from backend.models.schemas import AuditResponse
+from backend.models.schemas import AuditResponse, MitigationRequest, MitigationResponse
 from backend.services.preprocessor import preprocess_data
 from backend.services.bias_engine import run_bias_analysis
 
@@ -15,6 +15,7 @@ from backend.services.store import (
     save_user_settings, get_user_settings
 )
 from backend.services.gemini_service import generate_bias_explanation, generate_bias_explanation_stream
+from backend.services.mitigation_service import run_mitigation
 
 router = APIRouter()
 
@@ -56,6 +57,22 @@ async def fetch_settings(user_id: str):
 async def update_settings(user_id: str, settings: Dict[str, Any]):
     save_user_settings(user_id, settings)
     return {"status": "success"}
+
+@router.post("/mitigate", response_model=MitigationResponse)
+async def mitigate_bias(request: MitigationRequest):
+    try:
+        return run_mitigation(
+            request.audit_id, 
+            request.reweighing_strength, 
+            request.threshold_adjust, 
+            request.apply_postprocessing
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/history")
 async def get_history(user_id: str = None):
