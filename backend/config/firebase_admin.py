@@ -7,7 +7,8 @@ def initialize_firebase():
         # Check standard GOOGLE_APPLICATION_CREDENTIALS
         cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
         bucket_name = os.getenv("FIREBASE_STORAGE_BUCKET", "solutions-89747.firebasestorage.app")
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "solutions-89747")
+        # Ensure Firebase ALWAYS uses the solutions project, even if GOOGLE_CLOUD_PROJECT is set to Hackathon
+        firebase_project_id = os.getenv("FIREBASE_PROJECT_ID", "solutions-89747")
         
         # Check standard GOOGLE_APPLICATION_CREDENTIALS first, then fallback to local file
         if not cred_path or not os.path.exists(cred_path):
@@ -24,11 +25,11 @@ def initialize_firebase():
                 print(f"Firebase Admin: Exported GOOGLE_APPLICATION_CREDENTIALS from {cred_path}")
             cred = credentials.Certificate(cred_path)
             print(f"Loaded Firebase credentials from {cred_path}")
-            firebase_admin.initialize_app(cred, {"storageBucket": bucket_name, "projectId": project_id})
+            firebase_admin.initialize_app(cred, {"storageBucket": bucket_name, "projectId": firebase_project_id})
         else:
             # Fallback to default if no explicit JSON path provided, will use Application Default Credentials
             try:
-                firebase_admin.initialize_app(options={"storageBucket": bucket_name, "projectId": project_id})
+                firebase_admin.initialize_app(options={"storageBucket": bucket_name, "projectId": firebase_project_id})
             except Exception as e:
                 print(f"Warning: Could not initialize firebase admin cleanly: {e}")
     
