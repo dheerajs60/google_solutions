@@ -174,12 +174,12 @@ export const MitigationLab = () => {
                                             <span className="material-symbols-outlined text-outline-variant">trending_flat</span>
                                             <div className="flex flex-col">
                                                 <span className="text-[10px] font-bold text-primary uppercase tracking-wider">After</span>
-                                                <span className={clsx("text-2xl font-black", mitigated ? (diff > 0 ? "text-secondary" : "text-error") : "text-on-surface")}>
-                                                    {mitigated ? mitigated.toFixed(2) : '-.--'}
+                                                <span className={clsx("text-2xl font-black", typeof mitigated === 'number' ? (diff > 0 ? "text-secondary" : "text-error") : "text-on-surface")}>
+                                                    {typeof mitigated === 'number' ? mitigated.toFixed(2) : '-.--'}
                                                 </span>
                                             </div>
                                         </div>
-                                        {mitigated && (
+                                        {typeof mitigated === 'number' && (
                                             <div className={clsx(
                                                 "inline-flex items-center px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter",
                                                 diff > 0 ? "bg-secondary/10 text-secondary" : "bg-error/10 text-error"
