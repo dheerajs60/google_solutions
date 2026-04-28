@@ -3,9 +3,12 @@ from google.cloud import bigquery
 from google.api_core.exceptions import NotFound
 
 def get_bigquery_client():
-    """Initializes and returns a BigQuery client using the default credentials."""
+    """Initializes and returns a BigQuery client using explicit project ID."""
     try:
-        return bigquery.Client()
+        from backend.config.firebase_admin import firebase_project_id
+        # Try to use the same project as Firebase if it matches, otherwise use default
+        current_project = os.getenv("GOOGLE_CLOUD_PROJECT", "hackathon-481806")
+        return bigquery.Client(project=current_project)
     except Exception as e:
         print(f"Warning: Could not initialize BigQuery client. Default credentials missing? Error: {e}")
         return None
@@ -62,5 +65,10 @@ bq_client = get_bigquery_client()
 # Call on module load, but ALSO allow explicit calls
 if __name__ == "__main__":
     initialize_bigquery()
-# On-import initialization is removed to prevent blocking Cloud Run startup.
-# main.py now handles this in a non-blocking @app.on_event("startup") task.
+else:
+    # We still try to ensure on import, but we'll call it again in main.py for robustness
+    try:
+        if bq_client:
+            ensure_bigquery_schema(bq_client, project_id)
+    except Exception as e:
+        print(f"Warning: BigQuery initialization on import failed: {e}")

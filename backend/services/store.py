@@ -20,9 +20,10 @@ def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = N
     dataset_name = data.get("dataset", "Uploaded_Dataset.csv")
     model_type = data.get("model_type", "Classification")
 
-    # Store lightweight metadata in Firestore
-    if db:
-        try:
+    # High-resilience storage block
+    try:
+        # Store lightweight metadata in Firestore
+        if db:
             print(f"Firestore Diagnostics: Attempting to save to project '{db.project}'")
             doc_ref = db.collection("audit_history").document(audit_id)
             doc_ref.set({
@@ -32,45 +33,31 @@ def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = N
                 "date": timestamp,
                 "model_type": model_type,
                 "overall_score": overall_score,
-                "status": status,
-                "results": results, # SAVE FULL RESULTS HERE FOR PERSISTENCE ON REFRESH
-                "sensitive_attrs": data.get("sensitive_attrs", []),
-                "target_column": data.get("target_column", ""),
-                "positive_label": data.get("positive_label", "")
+                "status": status
             })
-            print(f"Firestore: Successfully saved metadata for audit {audit_id}")
-        except Exception as e:
-            print(f"!!! Firestore Save Error for audit {audit_id}: {e}")
-            import traceback
-            traceback.print_exc()
-    else:
-        print("!!! Firestore CRITICAL: Database client is NONE. Check service account permissions and key path.")
+            print(f"Firestore: Successfully saved metadata for audit {audit_id} for user {user_id}")
+        else:
+            print("!!! Firestore CRITICAL: Database client is NONE.")
 
-    # Store full details in BigQuery - only serializable metadata
-    if bq_client:
-        try:
-            # Filter out non-serializable objects like model, dataframes
+        # Store full details in BigQuery
+        if bq_client:
             serializable_data = {
                 k: v for k, v in data.items() 
                 if k in ["dataset", "date", "model_type", "sensitive_attrs", "target_column", "positive_label"]
             }
             full_details = {**serializable_data, "results": results, "user_id": user_id}
             table_ref = f"{project_id}.fair_audit.audits"
-            
-            # Convert nested dict into json string
-            rows_to_insert = [
-                {"audit_id": audit_id, "full_details": json.dumps(full_details)}
-            ]
+            rows_to_insert = [{"audit_id": audit_id, "full_details": json.dumps(full_details)}]
             
             errors = bq_client.insert_rows_json(table_ref, rows_to_insert)
             if errors:
                 print(f"!!! BigQuery Insertion Error: {errors}")
             else:
-                print(f"BigQuery: Successfully saved audit {audit_id} to {table_ref}")
-        except Exception as e:
-            print(f"!!! BigQuery Save Exception for audit {audit_id}: {e}")
-    else:
-        print("Warning: BigQuery client not initialized, skipping data save.")
+                print(f"BigQuery: Successfully saved audit {audit_id}")
+    except Exception as e:
+        print(f"!!! GLOBAL PERSISTENCE FAILURE for audit {audit_id}: {e}")
+        import traceback
+        traceback.print_exc()
 
 def update_audit_results(audit_id: str, results: Dict[str, Any]):
     if audit_id in ACTIVE_AUDITS:
@@ -111,20 +98,17 @@ def get_history(user_id: str = None) -> List[Dict[str, Any]]:
             query = db.collection("audit_history")
             
             if user_id:
-                # Strictly return only this user's audits
+                # Get user's specific audits ONLY to ensure isolation
                 user_docs = query.where("user_id", "==", user_id).stream()
                 history = [doc.to_dict() for doc in user_docs]
                 
-                # Ensure all IDs are strings and sorting by timestamp
-                for item in history:
-                    if "id" not in item:
-                        item["id"] = "legacy"
-                
+                # Sort in-memory: newer dates first
                 history.sort(key=lambda x: x.get("date", ""), reverse=True)
                 history = history[:50]
             else:
-                # If no user_id (not logged in), return nothing to ensure privacy over platform history
-                history = []
+                # No user_id filter, we can use native ordering on a single field
+                docs = query.order_by("date", direction=firestore.Query.DESCENDING).limit(50).stream()
+                history = [doc.to_dict() for doc in docs]
                 
         except Exception as e:
             print(f"!!! Firestore Read Error: {e}")
@@ -172,22 +156,7 @@ def get_history(user_id: str = None) -> List[Dict[str, Any]]:
             
     return history
 
-    # 1. Try Memory First (Fastest, contains non-serializable model/df)
-    if audit_id in ACTIVE_AUDITS:
-        return ACTIVE_AUDITS[audit_id]
-
-    # 2. Try Firestore (Contains full serializable results)
-    if db:
-        try:
-            doc = db.collection("audit_history").document(audit_id).get()
-            if doc.exists:
-                data = doc.to_dict()
-                print(f"Firestore: Retrieved full audit results for {audit_id}")
-                return data
-        except Exception as e:
-            print(f"Firestore Read Error: {e}")
-
-    # 3. Try BigQuery (Legacy/Backup)
+def get_audit(audit_id: str) -> Dict[str, Any]:
     if bq_client:
         try:
             query = f"""
@@ -206,7 +175,7 @@ def get_history(user_id: str = None) -> List[Dict[str, Any]]:
         except Exception as e:
             print(f"BigQuery read error: {e}")
         
-    return None
+    return ACTIVE_AUDITS.get(audit_id)
 
 def get_audit_results(audit_id: str) -> Dict[str, Any]:
     audit = get_audit(audit_id)

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse
+from typing import List, Dict, Any
 import pandas as pd
 import io
 import uuid
@@ -34,40 +35,6 @@ async def get_audit_analysis(audit_id: str):
     
     return {"explanation": explanation}
 
-@router.get("/{audit_id}/export")
-async def export_audit(audit_id: str):
-    audit_data = get_audit(audit_id)
-    if not audit_data:
-        raise HTTPException(status_code=404, detail="Audit not found")
-    
-    results = audit_data.get("results")
-    metrics = results.get("metrics", {})
-    
-    # Flatten metrics for CSV
-    data = []
-    for key, m in metrics.items():
-        data.append({
-            "Metric": m.get("description", key),
-            "Value": m.get("value"),
-            "Status": m.get("status")
-        })
-    
-    df = pd.DataFrame(data)
-    
-    # Add summary info
-    df.loc[len(df)] = ["Overall Fairness Score", results.get("overall_score"), "N/A"]
-    df.loc[len(df)] = ["Audit Timestamp", datetime.datetime.now().isoformat(), "N/A"]
-    
-    output = io.BytesIO()
-    df.to_csv(output, index=False)
-    output.seek(0)
-    
-    return StreamingResponse(
-        output,
-        media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=FairLens_Audit_{audit_id}.csv"}
-    )
-
 @router.get("/{audit_id}/analysis/stream")
 async def stream_audit_analysis(audit_id: str):
     audit_data = get_audit(audit_id)
@@ -93,6 +60,7 @@ async def update_settings(user_id: str, settings: Dict[str, Any]):
 
 @router.post("/mitigate", response_model=MitigationResponse)
 async def mitigate_bias(request: MitigationRequest):
+    print(f"Mitigation Triggered: Audit={request.audit_id}, Reweighing={request.reweighing_strength}, Post={request.apply_postprocessing}")
     try:
         return run_mitigation(
             request.audit_id, 
@@ -117,6 +85,50 @@ async def read_audit(audit_id: str):
     if not results:
         raise HTTPException(status_code=404, detail="Audit not found")
     return results
+
+@router.get("/{audit_id}/export/csv")
+async def export_audit_csv(audit_id: str):
+    audit_data = get_audit(audit_id)
+    if not audit_data:
+        raise HTTPException(status_code=404, detail="Audit not found")
+    
+    results = audit_data.get("results", {})
+    metrics = results.get("metrics", {})
+    
+    # Flatten metrics for CSV
+    rows = []
+    # 1. Global Metrics
+    for key, m in metrics.items():
+        rows.append({
+            "Category": "Core Metric",
+            "Variable": key.replace("_", " ").title(),
+            "Value": m.get("value") if isinstance(m, dict) else getattr(m, "value", 0.0),
+            "Status": m.get("status") if isinstance(m, dict) else getattr(m, "status", "N/A"),
+            "Description": m.get("description") if isinstance(m, dict) else getattr(m, "description", "")
+        })
+        
+    # 2. Group Comparisons
+    groups = results.get("group_comparisons", [])
+    for g in groups:
+        rows.append({
+            "Category": "Group Analysis",
+            "Variable": f"Group: {g.get('group')}",
+            "Value": g.get("selection_rate"),
+            "Status": "N/A",
+            "Description": f"Sample Count: {g.get('count')}"
+        })
+        
+    # Create CSV
+    df = pd.DataFrame(rows)
+    stream = io.StringIO()
+    df.to_csv(stream, index=False)
+    
+    response = StreamingResponse(
+        iter([stream.getvalue()]),
+        media_type="text/csv"
+    )
+    response.headers["Content-Disposition"] = f"attachment; filename=FairLens_Audit_{audit_id}.csv"
+    return response
 
 @router.post("/run", response_model=AuditResponse)
 async def run_audit(

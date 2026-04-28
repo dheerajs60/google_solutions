@@ -64,6 +64,12 @@ class AuditService {
         return response.data;
     }
 
+    async downloadAuditCSV(auditId) {
+        const baseURL = apiClient.defaults.baseURL || '';
+        const url = `${baseURL}/audit/${auditId}/export/csv`;
+        window.open(url, '_blank');
+    }
+
     async getSettings(userId) {
         const response = await apiClient.get(`/audit/settings/${userId}`);
         return response.data;

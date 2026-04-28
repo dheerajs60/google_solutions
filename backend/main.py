@@ -10,21 +10,12 @@ try:
     import backend.config.firebase_admin
     from backend.config.bigquery_client import initialize_bigquery
     
+    # Ensure BigQuery schema exists
+    initialize_bigquery()
+    
     from backend.middleware.auth_middleware import FirebaseAuthMiddleware
     
     app = FastAPI(title="FairLens API", version="1.0.0")
-
-    @app.on_event("startup")
-    async def startup_event():
-        import asyncio
-        # Ensure BigQuery schema exists in the background so we don't timeout on Cloud Run
-        print("Startup: Initializing BigQuery schema in background thread...")
-        try:
-            # Shift to a thread to be truly non-blocking for uvicorn
-            await asyncio.to_thread(initialize_bigquery)
-            print("Startup: BigQuery initialization complete.")
-        except Exception as e:
-            print(f"Warning: Background BigQuery initialization failed: {e}")
 except Exception as e:
     print(f"!!! CRITICAL STARTUP ERROR: {e}")
     import traceback
@@ -51,49 +42,6 @@ app.include_router(mitigation.router, prefix="/audit", tags=["Mitigation"])
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
-
-@app.get("/health/bigquery")
-async def check_bigquery():
-    from backend.config.bigquery_client import bq_client, project_id
-    from google.api_core.exceptions import NotFound
-    
-    if not bq_client:
-        return {"status": "error", "message": "BigQuery client not initialized"}
-    
-    try:
-        dataset_id = "fair_audit"
-        table_id = "audits"
-        dataset_ref = f"{project_id}.{dataset_id}"
-        table_ref = f"{dataset_ref}.{table_id}"
-        
-        # Check dataset
-        try:
-            client_dataset = bq_client.get_dataset(dataset_ref)
-            dataset_exists = True
-        except NotFound:
-            dataset_exists = False
-            
-        # Check table
-        table_exists = False
-        row_count = 0
-        if dataset_exists:
-            try:
-                table = bq_client.get_table(table_ref)
-                table_exists = True
-                row_count = table.num_rows
-            except NotFound:
-                table_exists = False
-        
-        return {
-            "status": "ok",
-            "project_id": project_id,
-            "dataset_exists": dataset_exists,
-            "table_exists": table_exists,
-            "row_count": row_count,
-            "dataset_location": client_dataset.location if dataset_exists else None
-        }
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
 
 # Serve Frontend static files
 frontend_path = os.path.join(os.getcwd(), "frontend/dist")

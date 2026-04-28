@@ -323,9 +323,16 @@ export const Dashboard = () => {
 
                                 <div className="flex items-center gap-4 mt-6">
                                     <Link to="/report" className="inline-flex items-center text-primary font-bold text-xs hover:underline">
-                                        Generate Compliance Report
+                                        View Web Report
                                         <span className="material-symbols-outlined text-sm ml-1">arrow_forward</span>
                                     </Link>
+                                    <button 
+                                        onClick={() => auditService.downloadAuditCSV(currentAuditId)}
+                                        className="inline-flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all dark:border-slate-800 dark:hover:bg-slate-800"
+                                    >
+                                        <span className="material-symbols-outlined text-sm">download</span>
+                                        Download Audit Report (CSV)
+                                    </button>
                                 </div>
                             </>
                         ) : aiAnalysisFailed ? (
@@ -388,11 +395,7 @@ export const Dashboard = () => {
 
             {/* Version Footer for Verification */}
             <div className="mt-12 pt-8 border-t border-slate-100 dark:border-slate-800 opacity-20">
-                <p className="text-[10px] text-center font-bold uppercase tracking-widest">
-                    FairLens Engine v2.2.0 - Stabilized Architecture
-                    <br/>
-                    Build Artifact Hash: {new Date().toISOString().split('T')[0]}-{Math.random().toString(36).substring(7).toUpperCase()}
-                </p>
+                <p className="text-[10px] text-center font-bold uppercase tracking-widest">FairLens Engine v2.2.0 - Stabilized Architecture</p>
             </div>
         </div>
     );

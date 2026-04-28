@@ -62,20 +62,21 @@ export const ComplianceReport = () => {
     const { metrics, overallScore, auditId, geminiExplanation } = useAuditStore();
     const [expanded, setExpanded] = useState('EU AI Act Article 10');
 
-    const downloadReport = async () => {
-        if (!auditId) return;
-        
-        try {
-            const apiBaseURL = import.meta.env.VITE_API_URL || '';
-            const url = `${apiBaseURL}/api/audit/${auditId}/export`;
-            
-            // Trigger browser download by opening the window or using a hidden link
-            window.open(url, '_blank');
-            
-        } catch (error) {
-            console.error("Export failed:", error);
-            alert("Failed to export report as CSV.");
-        }
+    const downloadReport = () => {
+        const reportData = {
+            auditId,
+            overallScore,
+            metrics,
+            aiExplanation: geminiExplanation,
+            timestamp: new Date().toISOString(),
+            status: "CERTIFIED"
+        };
+        const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `FairLens_Audit_${auditId || 'Report'}.json`;
+        a.click();
     };
 
     const standards = [

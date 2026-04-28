@@ -33,13 +33,24 @@ def initialize_firebase():
             except Exception as e:
                 print(f"Warning: Could not initialize firebase admin cleanly: {e}")
     
-    # Lifecycle rules are handled manually or in background to prevent startup timeouts
-    pass
+    # Configure 24 hour lifecycle deletion rule
+    try:
+        bucket = storage.bucket()
+        rules = list(bucket.lifecycle_rules)
+        has_rule = any(
+            r.get("action", {}).get("type") == "Delete" and r.get("condition", {}).get("age") == 1
+            for r in rules
+        )
+        if not has_rule:
+            bucket.add_lifecycle_delete_rule(age=1)
+            bucket.patch()
+    except Exception as e:
+        print(f"Warning: Could not configure bucket lifecycle rule: {e}")
 
     # Safely get firestore client
     try:
-        # Explicitly pass the project ID to ensure it doesn't pick up GOOGLE_CLOUD_PROJECT from env
-        return firestore.client(project=firebase_project_id)
+        # initialize_app should already have the correct project ID from the certificate
+        return firestore.client()
     except Exception as e:
         print(f"Warning: Could not initialize Firestore client. Default credentials missing? Error: {e}")
         return None
