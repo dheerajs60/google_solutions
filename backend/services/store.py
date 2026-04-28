@@ -33,8 +33,9 @@ def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = N
                 "overall_score": overall_score,
                 "status": status
             })
+            print(f"Firestore: Successfully saved metadata for audit {audit_id}")
         except Exception as e:
-            print(f"Firestore save error: {e}")
+            print(f"!!! Firestore Save Error: {e}")
     else:
         print("Warning: Firestore client not configured, skipping metadata save.")
 
@@ -103,10 +104,17 @@ def get_history(user_id: str = None) -> List[Dict[str, Any]]:
             query = db.collection("audit_history")
             
             if user_id:
-                # IMPORTANT: Filtering by user_id AND ordering by date requires a composite index.
-                # To avoid requiring the user to create indexes, we filter here and sort in Python.
-                docs = query.where("user_id", "==", user_id).stream()
-                history = [doc.to_dict() for doc in docs]
+                # 1. Get user's specific audits
+                user_docs = query.where("user_id", "==", user_id).stream()
+                history = [doc.to_dict() for doc in user_docs]
+                
+                # 2. ALSO include legacy audits (user_id is None/null) if they aren't already included
+                legacy_docs = query.where("user_id", "==", None).stream()
+                for doc in legacy_docs:
+                    data = doc.to_dict()
+                    if data.get("id") not in [h.get("id") for h in history]:
+                        history.append(data)
+                
                 # Sort in-memory: newer dates first
                 history.sort(key=lambda x: x.get("date", ""), reverse=True)
                 history = history[:50]
@@ -116,7 +124,9 @@ def get_history(user_id: str = None) -> List[Dict[str, Any]]:
                 history = [doc.to_dict() for doc in docs]
                 
         except Exception as e:
-            print(f"Firestore read error: {e}")
+            print(f"!!! Firestore Read Error: {e}")
+        
+    print(f"History: Found {len(history)} records in Firestore for local user_id: {user_id}")
 
     # 2. If nothing in Firestore, fallback to BigQuery
     if not history and bq_client:
