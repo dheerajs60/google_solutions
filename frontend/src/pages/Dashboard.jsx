@@ -7,6 +7,9 @@ import { BiasLineage } from '../components/dashboard/BiasLineage';
 import { geminiService } from '../services/geminiService';
 import { Activity } from 'lucide-react';
 import { auditService } from '../services/auditService';
+import ReactMarkdown from 'react-markdown';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
+import { clsx } from 'clsx';
 
 export const Dashboard = () => {
     const { 
@@ -276,10 +279,48 @@ export const Dashboard = () => {
                             </div>
                         ) : geminiExplanation ? (
                             <>
-                                <p className="text-on-surface-variant leading-relaxed text-sm dark:text-slate-300">
-                                    {geminiExplanation}
+                                <div className="prose prose-sm dark:prose-invert max-w-none text-on-surface-variant leading-relaxed dark:text-slate-300">
+                                    <ReactMarkdown>{geminiExplanation}</ReactMarkdown>
                                     {isAIAnalysing && <span className="inline-block w-1.5 h-4 ml-1 bg-primary animate-pulse"></span>}
-                                </p>
+                                </div>
+                                
+                                {/* Visual Chart for Clarity */}
+                                <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800">
+                                    <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-6">Visual Parity Analysis</h3>
+                                    <div className="h-64 w-full">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart
+                                                layout="vertical"
+                                                data={[
+                                                    { name: 'Disparate Impact', value: metrics?.disparate_impact?.value || 0 },
+                                                    { name: 'Demographic Parity', value: metrics?.demographic_parity?.value || 0 },
+                                                    { name: 'Equal Opportunity', value: metrics?.equal_opportunity?.value || 0 }
+                                                ]}
+                                                margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
+                                            >
+                                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                                                <XAxis type="number" domain={[0, 1]} tick={{fontSize: 10}} />
+                                                <YAxis type="category" dataKey="name" tick={{fontSize: 10, fontWeight: 'bold'}} />
+                                                <Tooltip 
+                                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                                />
+                                                <ReferenceLine x={0.8} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'top', value: '80% Rule', fontSize: 10, fill: '#ef4444' }} />
+                                                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
+                                                    {
+                                                        [0.8, 0.8, 0.8].map((threshold, index) => (
+                                                            <Cell 
+                                                                key={`cell-${index}`} 
+                                                                fill={metrics?.disparate_impact?.value < 0.8 ? '#f43f5e' : '#10b981'} 
+                                                            />
+                                                        ))
+                                                    }
+                                                </Bar>
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 mt-2 italic">* Red line indicates the 80% (0.8) regulatory threshold for Disparate Impact.</p>
+                                </div>
+
                                 <div className="flex items-center gap-4 mt-6">
                                     <Link to="/report" className="inline-flex items-center text-primary font-bold text-xs hover:underline">
                                         Generate Compliance Report

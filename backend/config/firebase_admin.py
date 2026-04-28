@@ -49,7 +49,8 @@ def initialize_firebase():
 
     # Safely get firestore client
     try:
-        return firestore.client()
+        # Explicitly pass the project ID to ensure it doesn't pick up GOOGLE_CLOUD_PROJECT from env
+        return firestore.client(project=firebase_project_id)
     except Exception as e:
         print(f"Warning: Could not initialize Firestore client. Default credentials missing? Error: {e}")
         return None

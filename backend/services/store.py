@@ -23,6 +23,7 @@ def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = N
     # Store lightweight metadata in Firestore
     if db:
         try:
+            print(f"Firestore Diagnostics: Attempting to save to project '{db.project}'")
             doc_ref = db.collection("audit_history").document(audit_id)
             doc_ref.set({
                 "id": audit_id,
@@ -35,9 +36,11 @@ def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = N
             })
             print(f"Firestore: Successfully saved metadata for audit {audit_id}")
         except Exception as e:
-            print(f"!!! Firestore Save Error: {e}")
+            print(f"!!! Firestore Save Error for audit {audit_id}: {e}")
+            import traceback
+            traceback.print_exc()
     else:
-        print("Warning: Firestore client not configured, skipping metadata save.")
+        print("!!! Firestore CRITICAL: Database client is NONE. Check service account permissions and key path.")
 
     # Store full details in BigQuery - only serializable metadata
     if bq_client:
