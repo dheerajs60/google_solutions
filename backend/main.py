@@ -15,7 +15,8 @@ try:
     
     from backend.middleware.auth_middleware import FirebaseAuthMiddleware
     
-    app = FastAPI(title="FairLens API", version="1.0.0")
+    # FairLens Engine v2.2.1 - Automated Stabilization
+    app = FastAPI(title="FairLens API", version="2.2.1")
 except Exception as e:
     print(f"!!! CRITICAL STARTUP ERROR: {e}")
     import traceback
