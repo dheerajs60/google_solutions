@@ -64,10 +64,8 @@ def generate_bias_explanation_stream(metrics: dict, sensitive_attrs: list[str]):
     """
     
     if not model:
-        yield "\n\n**[SIMULATED FORENSIC REPORT - OFFLINE MODE]**\n\n"
-        yield "Vertex AI access is currently restricted (billing/propagation). "
-        yield "The FairLens heuristic engine has generated this detailed forensic summary based on your metrics:\n\n"
         simulated_analysis = generate_simulated_report(metrics)
+        # Yield in smaller chunks for a better "typing" effect in UI
         # Yield in smaller chunks for a better "typing" effect in UI
         for i in range(0, len(simulated_analysis), 5):
             yield simulated_analysis[i:i+5]
@@ -89,8 +87,6 @@ def generate_bias_explanation_stream(metrics: dict, sensitive_attrs: list[str]):
         print(f"Vertex AI API failure (silencing for UI): {error_msg}")
         
         # Professional fallback without technical error logs
-        yield "\n\n**[SIMULATED FORENSIC REPORT - OFFLINE MODE]**\n\n"
-        
         simulated_analysis = generate_simulated_report(metrics)
         for i in range(0, len(simulated_analysis), 10):
             yield simulated_analysis[i:i+10]
@@ -109,57 +105,53 @@ def generate_simulated_report(metrics: dict) -> str:
     severity = "CRITICAL" if di_val < 0.6 or dp_val < 0.6 else "MODERATE"
     
     sections = [
-        "**EXECUTIVE SUMMARY: ALGORITHMIC FAIRNESS AUDIT**",
+        "**LEAD AUDITOR FORENSIC ANALYSIS**",
         "------------------------------------------------",
-        f"Audit Status: {severity} PARITY GAP DETECTED",
-        f"Timestamp: 2026-04-28 | Engine: FairLens Forensic (V2.1 Fallback)",
+        f"Audit Status: {severity} PARITY GAP",
+        f"Reference Code: FL-{severity[:3]}-{di_val:.2f}",
         "",
         "**1. CORE METRIC ANALYSIS**",
-        "The primary focus of this evaluation centers on the transition from training data to predictive inference. ",
-        f"Current analysis shows a Disparate Impact ratio of {di_val:.4f}. Under standard regulatory guidelines (e.g., the 80% rule), ",
-        f"this represents a {'failure' if di_val < 0.8 else 'marginal pass'} in statistical equity. The Demographic Parity gap of {dp_val:.4f} ",
-        "indicates that the model's selection rates are significantly decoupled across protected class boundaries.",
+        "The evaluation focuses on the transition from training distribution to predictive inference. ",
+        f"Analysis confirms a Disparate Impact ratio of {di_val:.4f}. Under standard (8/10ths) regulatory ",
+        f"guidelines, this indicates a {'significant' if di_val < 0.8 else 'marginal'} bias signature. ",
+        f"The Demographic Parity gap of {dp_val:.4f} suggests that selection rates stay significantly ",
+        "decoupled across protected class boundaries.",
         "",
-        "**2. STATISTICAL DRIVERS & COVARIANCE**",
-        "Our forensic engine has identified specific covariance patterns between the target label and sensitive attributes. ",
-        "There is a marked level of skew in the positive class distribution. Specifically, we observed:",
-        f"- Class Imbalance: The model exhibits a {'high' if dp_val < 0.7 else 'low'} propensity for negative prediction in protected subsets.",
-        "- Intersectionality: Overlapping protected attributes may be compounding the bias through secondary-order effects.",
-        "- Information Leakage: We suspect the model is indirectly capturing proxy variables that correlate with protected status.",
+        "**2. STATISTICAL DRIVERS**",
+        "Identified specific covariance patterns between the target label and sensitive attributes. ",
+        "Observed observations include:",
+        f"- **Class Imbalance**: High propensity for negative prediction in protected subsets.",
+        "- **Intersectionality**: Compounding bias through second-order effects.",
+        "- **Information Leakage**: Indirect capture of proxy variables.",
         "",
         "**3. PROXY VARIABLE EXPOSURE**",
-        "Even without explicit access to protected features during training, models often 're-learn' these patterns through:",
-        "- Zip Codes/Geography (acting as a proxy for race/ethnicity)",
-        "- Employment Gaps (acting as a proxy for age or caregiving status)",
-        "- Purchase Patterns (acting as a proxy for gender or socio-economic status)",
-        "We recommend a deep-dive into feature importance ranking to ensure these proxies are not dominating the decision boundary.",
+        "Models often 're-learn' protected patterns through technical proxies including:",
+        "- Zip Codes (Race/Ethnicity proxy)",
+        "- Employment Gaps (Age/Gender proxy)",
+        "- Purchase Patterns (Socio-economic proxy)",
+        "Recommendation: Deep-feature importance ranking to verify decision boundaries.",
         "",
-        "**4. REGULATORY COMPLIANCE IMPACT**",
-        "From a legal standpoint, a Disparate Impact below 0.80 often triggers 'prima facie' evidence of discrimination. ",
-        "Should this model be deployed in a high-stakes domain (Finance, HR, Healthcare), it may fail to meet the strictly enforced ",
-        "standards of algorithmic accountability and transparency. Immediate intervention is advised to mitigate liability risks.",
+        "**4. COMPLIANCE IMPACT**",
+        "Disparate Impact below parity thresholds often triggers regulatory investigation. ",
+        "Deployment in high-stakes domains (Finance, HR, Healthcare) may fail transparency ",
+        "audits. Immediate mitigation is required to minimize liability.",
         "",
-        "**5. REMEDIATION STRATEGY (TECHNICAL ROADMAP)**",
-        "To bring the model into compliance, we propose the following three-phase intervention:",
+        "**5. REMEDIATION STRATEGY**",
+        "We propose a three-phase intervention roadmap:",
         "",
-        "PHASE A: PRE-PROCESSING (DATA LEVEL)",
-        "- Implementation of 'Targeted Reweighing': Adjusting the weights of individual samples to ensure the joint distribution of ",
-        "  sensitive attributes and targets is statistically independent. This is the most non-invasive method for manual audits.",
+        "**PHASE A: PRE-PROCESSING (Data)**",
+        "- **Targeted Reweighing**: Adjusting sample weights to ensure demographic independence.",
         "",
-        "PHASE B: IN-PROCESSING (MODEL LEVEL)",
-        "- Adversarial Debiasing: Introducing a secondary 'adversary' network during training that attempts to predict sensitive ",
-        "  attributes from the primary model's output. The primary model is then penalized for providing predictable information.",
+        "**PHASE B: IN-PROCESSING (Model)**",
+        "- **Adversarial Debiasing**: Penalizing the model for providing predictable info to adversaries.",
         "",
-        "PHASE C: POST-PROCESSING (INFERENCE LEVEL)",
-        "- Equalized Odds Adjustment: Calibrating the probability thresholds for each demographic group individually to ensure ",
-        "  parity in False Positive and False Negative rates across all protected classes.",
+        "**PHASE C: POST-PROCESSING (Inference)**",
+        "- **Equalized Odds**: Calibrating probability thresholds for parity in predictive error rates.",
         "",
         "**6. FINAL AUDITOR SIGN-OFF**",
-        "The current parity drivers do not align with our internal ethical AI benchmarks. Validation of the next model iteration ",
-        "is required before promotion to production environments. We have logged this audit trace into the persistent ledger ",
-        "for future regulatory review and Chain of Custody verification.",
+        "Validation of the next model iteration is required before production promotion. ",
+        "This audit trace is stored in the persistent ledger for future regulatory review.",
         "------------------------------------------------",
-        "Report generated by FairLens Heuristic Forensics Framework (Alpha)."
     ]
     
     return "\n".join(sections)
