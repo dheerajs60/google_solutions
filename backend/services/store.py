@@ -22,7 +22,7 @@ def store_audit(audit_id: str, data: Dict[str, Any], results: Dict[str, Any] = N
         ACTIVE_AUDITS[audit_id] = {**data, "results": results, "user_id": user_id}
     
     overall_score = results.get("overall_score", 0.0) if results else 0.0
-    status = "PASS" if overall_score > 0.9 else "WARNING" if overall_score > 0.8 else "FAIL"
+    status = "PASS" if overall_score >= 0.8 else "WARNING" if overall_score >= 0.6 else "FAIL"
     
     timestamp = data.get("date", datetime.datetime.now().strftime("%Y-%m-%d"))
     dataset_name = data.get("dataset", "Uploaded_Dataset.csv")
@@ -92,6 +92,39 @@ def update_audit_results(audit_id: str, results: Dict[str, Any]):
 def update_mitigation_results(audit_id: str, mitigation_res: Dict[str, Any]):
     if audit_id in ACTIVE_AUDITS:
         ACTIVE_AUDITS[audit_id]["mitigation_results"] = mitigation_res
+        
+    # Extract the 'After' score for metadata update
+    after_metrics = mitigation_res.get("after_metrics", {})
+    dp = after_metrics.get("demographic_parity", {}).get("value", 1.0)
+    eo = after_metrics.get("equal_opportunity", {}).get("value", 1.0)
+    di = after_metrics.get("disparate_impact", {}).get("value", 1.0)
+    
+    mitigated_score = (dp + eo + di) / 3
+    status = "PASS" if mitigated_score >= 0.8 else "WARNING" if mitigated_score >= 0.6 else "FAIL"
+    
+    # Update persistent storage so 'Recent Activity' reflects the mitigation
+    try:
+        if db:
+            db.collection("audit_history").document(audit_id).update({
+                "overall_score": mitigated_score,
+                "status": status,
+                "is_mitigated": True
+            })
+            
+        if bq_client:
+            # We also update the full details in BigQuery
+            if audit_id in ACTIVE_AUDITS:
+                details_str = json.dumps(ACTIVE_AUDITS[audit_id])
+                query = f"UPDATE `{project_id}.fair_audit.audits` SET full_details = @details WHERE audit_id = @id"
+                job_config = bigquery.QueryJobConfig(
+                    query_parameters=[
+                        bigquery.ScalarQueryParameter("details", "STRING", details_str),
+                        bigquery.ScalarQueryParameter("id", "STRING", audit_id),
+                    ]
+                )
+                bq_client.query(query, job_config=job_config).result()
+    except Exception as e:
+        print(f"Error persisting mitigation results: {e}")
 
 def get_history(user_id: str = None) -> List[Dict[str, Any]]:
     history = []
@@ -135,7 +168,7 @@ def get_history(user_id: str = None) -> List[Dict[str, Any]]:
                 details = json.loads(row.full_details)
                 res = details.get("results", {})
                 overall_score = res.get("overall_score", 0.0)
-                status = "PASS" if overall_score > 0.9 else "WARNING" if overall_score > 0.8 else "FAIL"
+                status = "PASS" if overall_score >= 0.8 else "WARNING" if overall_score >= 0.6 else "FAIL"
                 
                 history.append({
                     "id": row.audit_id,
@@ -157,7 +190,7 @@ def get_history(user_id: str = None) -> List[Dict[str, Any]]:
                 continue
                 
             overall_score = value.get("results", {}).get("overall_score", 0.0)
-            status = "PASS" if overall_score > 0.9 else "WARNING" if overall_score > 0.8 else "FAIL"
+            status = "PASS" if overall_score >= 0.8 else "WARNING" if overall_score >= 0.6 else "FAIL"
             history.append({
                 "id": key,
                 "dataset": value.get("dataset", "Unknown"),

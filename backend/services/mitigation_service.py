@@ -6,7 +6,7 @@ from backend.models.schemas import MitigationResponse, AuditMetric, ParetoPoint
 from backend.services.store import get_audit
 
 def _get_status(score):
-    return "PASS" if score > 0.9 else "WARNING" if score > 0.8 else "FAIL"
+    return "PASS" if score >= 0.8 else "WARNING" if score >= 0.6 else "FAIL"
 
 from fairlearn.preprocessing import CorrelationRemover
 from sklearn.ensemble import RandomForestClassifier

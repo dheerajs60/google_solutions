@@ -9,8 +9,8 @@ from backend.services.gemini_service import generate_bias_explanation
 
 def _get_status(score, reverse=False):
     if reverse:
-        return "PASS" if score < 0.1 else "WARNING" if score < 0.2 else "FAIL"
-    return "PASS" if score > 0.9 else "WARNING" if score > 0.8 else "FAIL"
+        return "PASS" if score < 0.2 else "WARNING" if score < 0.4 else "FAIL"
+    return "PASS" if score >= 0.8 else "WARNING" if score >= 0.6 else "FAIL"
 
 def run_bias_analysis(df: pd.DataFrame, sensitive_attrs: list[str], target_col: str, positive_label: str) -> dict:
     audit_id = str(uuid.uuid4())
